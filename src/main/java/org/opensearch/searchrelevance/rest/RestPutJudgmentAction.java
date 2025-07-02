@@ -14,9 +14,14 @@ import static org.opensearch.searchrelevance.common.MetricsConstants.MODEL_ID;
 import static org.opensearch.searchrelevance.common.PluginConstants.CLICK_MODEL;
 import static org.opensearch.searchrelevance.common.PluginConstants.CONTEXT_FIELDS;
 import static org.opensearch.searchrelevance.common.PluginConstants.DESCRIPTION;
+import static org.opensearch.searchrelevance.common.PluginConstants.FORMAT;
+import static org.opensearch.searchrelevance.common.PluginConstants.GT;
+import static org.opensearch.searchrelevance.common.PluginConstants.GTE;
 import static org.opensearch.searchrelevance.common.PluginConstants.IGNORE_FAILURE;
 import static org.opensearch.searchrelevance.common.PluginConstants.JUDGMENTS_URL;
 import static org.opensearch.searchrelevance.common.PluginConstants.JUDGMENT_RATINGS;
+import static org.opensearch.searchrelevance.common.PluginConstants.LT;
+import static org.opensearch.searchrelevance.common.PluginConstants.LTE;
 import static org.opensearch.searchrelevance.common.PluginConstants.NAME;
 import static org.opensearch.searchrelevance.common.PluginConstants.NAX_RANK;
 import static org.opensearch.searchrelevance.common.PluginConstants.QUERYSET_ID;
@@ -137,7 +142,22 @@ public class RestPutJudgmentAction extends BaseRestHandler {
             case UBI_JUDGMENT -> {
                 String clickModel = (String) source.get(CLICK_MODEL);
                 int maxRank = (int) source.get(NAX_RANK);
-                createRequest = new PutUbiJudgmentRequest(type, name, description, clickModel, maxRank);
+
+                String gte = (String) source.getOrDefault(GTE, "");
+                String gt = (String) source.getOrDefault(GT, "");
+                String lte = (String) source.getOrDefault(LTE, "");
+                String lt = (String) source.getOrDefault(LT, "");
+
+                if ((gte.equals("") == false && gt.equals("") == false) || (lte.equals("") == false && lt.equals("") == false)) {
+                    return channel -> channel.sendResponse(
+                        new BytesRestResponse(RestStatus.BAD_REQUEST, "Invalid date ranges: " + nameValidation.getErrorMessage())
+                    );
+                }
+
+                String format = (String) source.getOrDefault(FORMAT, "");
+
+                Map<String, Object> dateRangeParameters = Map.of(GTE, gte, GT, gt, LTE, lte, LT, lt, FORMAT, format);
+                createRequest = new PutUbiJudgmentRequest(type, name, description, clickModel, maxRank, dateRangeParameters);
             }
             case IMPORT_JUDGMENT -> {
                 List<Map<String, Object>> judgmentRatings = (List<Map<String, Object>>) source.get(JUDGMENT_RATINGS);

@@ -7,6 +7,12 @@
  */
 package org.opensearch.searchrelevance.action.judgment;
 
+import static org.opensearch.searchrelevance.common.PluginConstants.FORMAT;
+import static org.opensearch.searchrelevance.common.PluginConstants.GT;
+import static org.opensearch.searchrelevance.common.PluginConstants.GTE;
+import static org.opensearch.searchrelevance.common.PluginConstants.LT;
+import static org.opensearch.searchrelevance.common.PluginConstants.LTE;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +28,14 @@ import org.opensearch.test.OpenSearchTestCase;
 public class PutJudgmentActionTests extends OpenSearchTestCase {
 
     public void testStreams() throws IOException {
-        PutJudgmentRequest request = new PutUbiJudgmentRequest(JudgmentType.UBI_JUDGMENT, "name", "description", "coec", 20);
+        PutJudgmentRequest request = new PutUbiJudgmentRequest(
+            JudgmentType.UBI_JUDGMENT,
+            "name",
+            "description",
+            "coec",
+            20,
+            Map.of(GTE, "", GT, "", LTE, "", LT, "", FORMAT, "")
+        );
         BytesStreamOutput output = new BytesStreamOutput();
         request.writeTo(output);
         StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);
@@ -31,10 +44,18 @@ public class PutJudgmentActionTests extends OpenSearchTestCase {
         assertEquals(JudgmentType.UBI_JUDGMENT, serialized.getType());
         assertEquals("description", serialized.getDescription());
         assertEquals("coec", serialized.getClickModel());
+        assertEquals(Map.of(GTE, "", GT, "", LTE, "", LT, "", FORMAT, ""), serialized.getDateRangeParameters());
     }
 
     public void testRequestValidation() {
-        PutJudgmentRequest request = new PutUbiJudgmentRequest(JudgmentType.UBI_JUDGMENT, "name", "description", "coec", 20);
+        PutJudgmentRequest request = new PutUbiJudgmentRequest(
+            JudgmentType.UBI_JUDGMENT,
+            "name",
+            "description",
+            "coec",
+            20,
+            Map.of(GTE, "", GT, "", LTE, "", LT, "", FORMAT, "")
+        );
         assertNull(request.validate());
     }
 

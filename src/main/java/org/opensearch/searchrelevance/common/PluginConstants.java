@@ -86,4 +86,10 @@ public class PluginConstants {
     public static final int DEFAULTED_QUERY_SET_SIZE = 10;
     public static final String MANUAL = "manual";
 
+    public static final String GTE = "gte";
+    public static final String GT = "gt";
+    public static final String LTE = "lte";
+    public static final String LT = "lt";
+    public static final String FORMAT = "format";
+
 }

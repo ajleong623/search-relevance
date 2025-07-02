@@ -7,6 +7,11 @@
  */
 package org.opensearch.searchrelevance.judgments.clickmodel.coec;
 
+import static org.opensearch.searchrelevance.common.PluginConstants.FORMAT;
+import static org.opensearch.searchrelevance.common.PluginConstants.GT;
+import static org.opensearch.searchrelevance.common.PluginConstants.GTE;
+import static org.opensearch.searchrelevance.common.PluginConstants.LT;
+import static org.opensearch.searchrelevance.common.PluginConstants.LTE;
 import static org.opensearch.searchrelevance.common.PluginConstants.UBI_EVENTS_INDEX;
 
 import java.util.ArrayList;
@@ -30,6 +35,7 @@ import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
+import org.opensearch.index.query.RangeQueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.aggregations.AggregationBuilders;
 import org.opensearch.search.aggregations.bucket.terms.Terms;
@@ -77,8 +83,18 @@ public class CoecClickModel extends ClickModel {
     private void getRankAggregatedClickThrough(ActionListener<Map<Integer, Double>> listener) {
         LOGGER.info("Starting rank aggregated clickthrough calculation");
 
+        Map<String, String> dateRangeParameters = parameters.getDateRangeParameters();
+
+        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp")
+            .format(dateRangeParameters.get(FORMAT))
+            .lt(dateRangeParameters.get(LT))
+            .gt(dateRangeParameters.get(GT))
+            .lte(dateRangeParameters.get(LTE))
+            .gte(dateRangeParameters.get(GTE));
+
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
-            .must(QueryBuilders.rangeQuery("event_attributes.position.ordinal").lte(parameters.getMaxRank()));
+            .must(QueryBuilders.rangeQuery("event_attributes.position.ordinal").lte(parameters.getMaxRank()))
+            .must(dateFilter);
 
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder().query(queryBuilder).size(SCROLL_SIZE).timeout(SEARCH_TIMEOUT);
 

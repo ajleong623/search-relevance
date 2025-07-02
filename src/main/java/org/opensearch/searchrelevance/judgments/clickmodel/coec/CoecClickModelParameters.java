@@ -7,6 +7,8 @@
  */
 package org.opensearch.searchrelevance.judgments.clickmodel.coec;
 
+import java.util.Map;
+
 import org.opensearch.searchrelevance.judgments.clickmodel.ClickModelParameters;
 
 /**
@@ -17,12 +19,25 @@ public class CoecClickModelParameters extends ClickModelParameters {
     private final int maxRank;
     private int roundingDigits = 3;
 
+    private Map<String, String> dateRangeParameters;
+
     /**
      * Creates new parameters.
      * @param maxRank The max rank to use when calculating the judgments.
      */
     public CoecClickModelParameters(final int maxRank) {
         this.maxRank = maxRank;
+    }
+
+    /**
+     * Creates new parameters.
+     * @param maxRank The max rank to use when calculating the judgments.
+     * @param dateRangeParameters The information to build a filter for the range
+     * of UBI event dates to consider.
+     */
+    public CoecClickModelParameters(final int maxRank, final Map<String, String> dateRangeParameters) {
+        this.maxRank = maxRank;
+        this.dateRangeParameters = dateRangeParameters;
     }
 
     /**
@@ -49,6 +64,14 @@ public class CoecClickModelParameters extends ClickModelParameters {
      */
     public int getRoundingDigits() {
         return roundingDigits;
+    }
+
+    /**
+     * Gets the UBI event timestamp date range parameters from users.
+     * @return The UBI event timestamp date range parameters from users.
+     */
+    public Map<String, String> getDateRangeParameters() {
+        return dateRangeParameters;
     }
 
 }

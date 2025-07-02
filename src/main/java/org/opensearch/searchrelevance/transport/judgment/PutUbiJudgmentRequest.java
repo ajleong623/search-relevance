@@ -8,6 +8,7 @@
 package org.opensearch.searchrelevance.transport.judgment;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -18,23 +19,27 @@ import reactor.util.annotation.NonNull;
 public class PutUbiJudgmentRequest extends PutJudgmentRequest {
     private String clickModel;
     private int maxRank;
+    private Map<String, Object> dateRangeParameters;
 
     public PutUbiJudgmentRequest(
         @NonNull JudgmentType type,
         @NonNull String name,
         @NonNull String description,
         @NonNull String clickModel,
-        int maxRank
+        int maxRank,
+        @NonNull Map<String, Object> dateRangeParameters
     ) {
         super(type, name, description);
         this.clickModel = clickModel;
         this.maxRank = maxRank;
+        this.dateRangeParameters = dateRangeParameters;
     }
 
     public PutUbiJudgmentRequest(StreamInput in) throws IOException {
         super(in);
         this.clickModel = in.readString();
         this.maxRank = in.readInt();
+        this.dateRangeParameters = in.readMap();
     }
 
     @Override
@@ -42,6 +47,7 @@ public class PutUbiJudgmentRequest extends PutJudgmentRequest {
         super.writeTo(out);
         out.writeString(clickModel);
         out.writeInt(maxRank);
+        out.writeMap(dateRangeParameters);
     }
 
     public String getClickModel() {
@@ -50,5 +56,9 @@ public class PutUbiJudgmentRequest extends PutJudgmentRequest {
 
     public int getMaxRank() {
         return maxRank;
+    }
+
+    public Map<String, Object> getDateRangeParameters() {
+        return dateRangeParameters;
     }
 }
