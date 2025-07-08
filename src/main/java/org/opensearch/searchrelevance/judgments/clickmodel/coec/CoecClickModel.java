@@ -7,11 +7,6 @@
  */
 package org.opensearch.searchrelevance.judgments.clickmodel.coec;
 
-import static org.opensearch.searchrelevance.common.PluginConstants.FORMAT;
-import static org.opensearch.searchrelevance.common.PluginConstants.GT;
-import static org.opensearch.searchrelevance.common.PluginConstants.GTE;
-import static org.opensearch.searchrelevance.common.PluginConstants.LT;
-import static org.opensearch.searchrelevance.common.PluginConstants.LTE;
 import static org.opensearch.searchrelevance.common.PluginConstants.UBI_EVENTS_INDEX;
 
 import java.util.ArrayList;
@@ -83,14 +78,13 @@ public class CoecClickModel extends ClickModel {
     private void getRankAggregatedClickThrough(ActionListener<Map<Integer, Double>> listener) {
         LOGGER.info("Starting rank aggregated clickthrough calculation");
 
-        Map<String, String> dateRangeParameters = parameters.getDateRangeParameters();
+        String startDate = parameters.getStartDate();
+        String endDate = parameters.getEndDate();
 
         RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp")
-            .format(dateRangeParameters.get(FORMAT))
-            .lt(dateRangeParameters.get(LT))
-            .gt(dateRangeParameters.get(GT))
-            .lte(dateRangeParameters.get(LTE))
-            .gte(dateRangeParameters.get(GTE));
+            .format("yyyy-MM-DD")
+            .lte(endDate)
+            .gte(startDate);
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
             .must(QueryBuilders.rangeQuery("event_attributes.position.ordinal").lte(parameters.getMaxRank()))

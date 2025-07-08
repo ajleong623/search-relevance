@@ -7,8 +7,6 @@
  */
 package org.opensearch.searchrelevance.judgments.clickmodel.coec;
 
-import java.util.Map;
-
 import org.opensearch.searchrelevance.judgments.clickmodel.ClickModelParameters;
 
 /**
@@ -19,7 +17,8 @@ public class CoecClickModelParameters extends ClickModelParameters {
     private final int maxRank;
     private int roundingDigits = 3;
 
-    private Map<String, String> dateRangeParameters;
+    private String startDate="";
+    private String endDate="";
 
     /**
      * Creates new parameters.
@@ -35,9 +34,10 @@ public class CoecClickModelParameters extends ClickModelParameters {
      * @param dateRangeParameters The information to build a filter for the range
      * of UBI event dates to consider.
      */
-    public CoecClickModelParameters(final int maxRank, final Map<String, String> dateRangeParameters) {
+    public CoecClickModelParameters(final int maxRank, final String startDate, final String endDate) {
         this.maxRank = maxRank;
-        this.dateRangeParameters = dateRangeParameters;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
     /**
@@ -67,11 +67,19 @@ public class CoecClickModelParameters extends ClickModelParameters {
     }
 
     /**
-     * Gets the UBI event timestamp date range parameters from users.
-     * @return The UBI event timestamp date range parameters from users.
+     * Gets the start date for UBI timestamp filter.
+     * @return The start date for UBI timestamp filter.
      */
-    public Map<String, String> getDateRangeParameters() {
-        return dateRangeParameters;
+    public String getStartDate() {
+        return startDate;
+    }
+
+    /**
+     * Gets the end date for UBI timestamp filter.
+     * @return The end date for UBI timestamp filter.
+     */
+    public String getEndDate() {
+        return endDate;
     }
 
 }

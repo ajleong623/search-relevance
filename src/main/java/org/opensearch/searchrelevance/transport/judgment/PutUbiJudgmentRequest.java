@@ -19,7 +19,8 @@ import reactor.util.annotation.NonNull;
 public class PutUbiJudgmentRequest extends PutJudgmentRequest {
     private String clickModel;
     private int maxRank;
-    private Map<String, Object> dateRangeParameters;
+    private String startDate;
+    private String endDate;
 
     public PutUbiJudgmentRequest(
         @NonNull JudgmentType type,
@@ -27,19 +28,22 @@ public class PutUbiJudgmentRequest extends PutJudgmentRequest {
         @NonNull String description,
         @NonNull String clickModel,
         int maxRank,
-        @NonNull Map<String, Object> dateRangeParameters
+        @NonNull String startDate,
+        @NonNull String endDate
     ) {
         super(type, name, description);
         this.clickModel = clickModel;
         this.maxRank = maxRank;
-        this.dateRangeParameters = dateRangeParameters;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
     public PutUbiJudgmentRequest(StreamInput in) throws IOException {
         super(in);
         this.clickModel = in.readString();
         this.maxRank = in.readInt();
-        this.dateRangeParameters = in.readMap();
+        this.startDate = in.readString();
+        this.endDate = in.readString();
     }
 
     @Override
@@ -47,7 +51,8 @@ public class PutUbiJudgmentRequest extends PutJudgmentRequest {
         super.writeTo(out);
         out.writeString(clickModel);
         out.writeInt(maxRank);
-        out.writeMap(dateRangeParameters);
+        out.writeString(startDate);
+        out.writeString(endDate);
     }
 
     public String getClickModel() {
@@ -58,7 +63,11 @@ public class PutUbiJudgmentRequest extends PutJudgmentRequest {
         return maxRank;
     }
 
-    public Map<String, Object> getDateRangeParameters() {
-        return dateRangeParameters;
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
     }
 }

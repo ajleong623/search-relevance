@@ -112,7 +112,8 @@ public class PutJudgmentTransportAction extends HandledTransportAction<PutJudgme
                 PutUbiJudgmentRequest ubiRequest = (PutUbiJudgmentRequest) request;
                 metadata.put("clickModel", ubiRequest.getClickModel());
                 metadata.put("maxRank", ubiRequest.getMaxRank());
-                metadata.put("dateRangeParameters", ubiRequest.getDateRangeParameters());
+                metadata.put("startDate", ubiRequest.getStartDate());
+                metadata.put("endDate", ubiRequest.getEndDate());
             }
             case IMPORT_JUDGMENT -> {
                 PutImportJudgmentRequest importRequest = (PutImportJudgmentRequest) request;
