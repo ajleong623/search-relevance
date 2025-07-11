@@ -22,15 +22,7 @@ import org.opensearch.test.OpenSearchTestCase;
 public class PutJudgmentActionTests extends OpenSearchTestCase {
 
     public void testStreams() throws IOException {
-        PutJudgmentRequest request = new PutUbiJudgmentRequest(
-            JudgmentType.UBI_JUDGMENT,
-            "name",
-            "description",
-            "coec",
-            20,
-            "",
-            ""
-        );
+        PutJudgmentRequest request = new PutUbiJudgmentRequest(JudgmentType.UBI_JUDGMENT, "name", "description", "coec", 20, "", "");
         BytesStreamOutput output = new BytesStreamOutput();
         request.writeTo(output);
         StreamInput in = StreamInput.wrap(output.bytes().toBytesRef().bytes);
@@ -44,15 +36,7 @@ public class PutJudgmentActionTests extends OpenSearchTestCase {
     }
 
     public void testRequestValidation() {
-        PutJudgmentRequest request = new PutUbiJudgmentRequest(
-            JudgmentType.UBI_JUDGMENT,
-            "name",
-            "description",
-            "coec",
-            20,
-            "",
-            ""
-        );
+        PutJudgmentRequest request = new PutUbiJudgmentRequest(JudgmentType.UBI_JUDGMENT, "name", "description", "coec", 20, "", "");
         assertNull(request.validate());
     }
 

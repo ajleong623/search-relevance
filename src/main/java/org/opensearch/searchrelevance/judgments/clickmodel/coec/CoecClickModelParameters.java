@@ -17,8 +17,8 @@ public class CoecClickModelParameters extends ClickModelParameters {
     private final int maxRank;
     private int roundingDigits = 3;
 
-    private String startDate="";
-    private String endDate="";
+    private String startDate = "";
+    private String endDate = "";
 
     /**
      * Creates new parameters.

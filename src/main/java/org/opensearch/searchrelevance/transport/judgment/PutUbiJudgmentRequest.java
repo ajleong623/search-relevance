@@ -8,7 +8,6 @@
 package org.opensearch.searchrelevance.transport.judgment;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;

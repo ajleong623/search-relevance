@@ -26,6 +26,8 @@ public class PluginConstants {
     public static final String JUDGMENTS_URL = SEARCH_RELEVANCE_BASE_URI + "/judgments";
     /** The URI for this plugin's search configurations rest actions */
     public static final String SEARCH_CONFIGURATIONS_URL = SEARCH_RELEVANCE_BASE_URI + "/search_configurations";
+    /** The URI for initializing the UBI indices */
+    public static final String INITIALIZE_URL = "/_plugins/ubi/initialize";
 
     /** The URI PARAMS placeholders */
     public static final String DOCUMENT_ID = "id";
@@ -61,6 +63,8 @@ public class PluginConstants {
 
     public static final String CLICK_MODEL = "clickModel";
     public static final String NAX_RANK = "maxRank";
+    public static final String START_DATE = "start_date";
+    public static final String END_DATE = "end_date";
 
     /**
      * Rest Input Field Names
@@ -85,7 +89,4 @@ public class PluginConstants {
 
     public static final int DEFAULTED_QUERY_SET_SIZE = 10;
     public static final String MANUAL = "manual";
-
-    public static final String START_DATE = "start_date";
-    public static final String END_DATE = "end_date";
 }

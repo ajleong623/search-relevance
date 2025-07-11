@@ -81,10 +81,7 @@ public class CoecClickModel extends ClickModel {
         String startDate = parameters.getStartDate();
         String endDate = parameters.getEndDate();
 
-        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp")
-            .format("yyyy-MM-DD")
-            .lte(endDate)
-            .gte(startDate);
+        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp").format("yyyy-MM-DD").lte(endDate).gte(startDate);
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
             .must(QueryBuilders.rangeQuery("event_attributes.position.ordinal").lte(parameters.getMaxRank()))
