@@ -16,11 +16,13 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.http.message.BasicHeader;
 import org.opensearch.client.Response;
+import org.opensearch.client.ResponseException;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.searchrelevance.BaseSearchRelevanceIT;
 import org.opensearch.test.OpenSearchIntegTestCase;
@@ -52,34 +54,111 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
     public void testCalculateJudgments() {
         initializeUBIIndices();
 
-        String requestBody = Files.readString(Path.of(classLoader.getResource("judgment/ImplicitJudgmentsDates.json").toURI()));
-        Response importResponse = makeRequest(
-            client(),
-            RestRequest.Method.PUT.name(),
-            JUDGMENTS_URL,
-            null,
-            toHttpEntity(requestBody),
-            ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+        List<String> implicitJudgments = List.of(
+            "judgment/ImplicitJudgmentsDates.json",
+            "judgment/ImplicitJudgmentsStartDates.json",
+            "judgment/ImplicitJudgmentsDatesOutOfBounds.json"
         );
-        Map<String, Object> importResultJson = entityAsMap(importResponse);
-        assertNotNull(importResultJson);
-        String judgmentsId = importResultJson.get("judgment_id").toString();
-        assertNotNull(judgmentsId);
+        for (String implicitJudgment : implicitJudgments) {
+            String requestBody = Files.readString(Path.of(classLoader.getResource(implicitJudgment).toURI()));
+            Response importResponse = makeRequest(
+                client(),
+                RestRequest.Method.PUT.name(),
+                JUDGMENTS_URL,
+                null,
+                toHttpEntity(requestBody),
+                ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+            );
+            Map<String, Object> importResultJson = entityAsMap(importResponse);
+            assertNotNull(importResultJson);
+            String judgmentsId = importResultJson.get("judgment_id").toString();
+            assertNotNull(judgmentsId);
 
-        // wait for completion of import action
-        Thread.sleep(DEFAULT_INTERVAL_MS);
+            // wait for completion of import action
+            Thread.sleep(DEFAULT_INTERVAL_MS);
 
-        String getJudgmentsByIdUrl = String.join("/", JUDGMENT_INDEX, "_doc", judgmentsId);
-        Response getJudgmentsResponse = makeRequest(
-            adminClient(),
-            RestRequest.Method.GET.name(),
-            getJudgmentsByIdUrl,
-            null,
-            null,
-            ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
-        );
-        Map<String, Object> getJudgmentsResultJson = entityAsMap(getJudgmentsResponse);
-        assertNotNull(getJudgmentsResultJson);
-        assertEquals(judgmentsId, getJudgmentsResultJson.get("_id").toString());
+            String getJudgmentsByIdUrl = String.join("/", JUDGMENT_INDEX, "_doc", judgmentsId);
+            Response getJudgmentsResponse = makeRequest(
+                adminClient(),
+                RestRequest.Method.GET.name(),
+                getJudgmentsByIdUrl,
+                null,
+                null,
+                ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+            );
+            Map<String, Object> getJudgmentsResultJson = entityAsMap(getJudgmentsResponse);
+            assertNotNull(getJudgmentsResultJson);
+            assertEquals(judgmentsId, getJudgmentsResultJson.get("_id").toString());
+
+            Map<String, Object> source = (Map<String, Object>) getJudgmentsResultJson.get("_source");
+            assertNotNull(source);
+            assertNotNull(source.get("id"));
+            assertNotNull(source.get("timestamp"));
+            assertEquals("Implicit Judgements", source.get("name"));
+            assertEquals("COMPLETED", source.get("status"));
+
+            // Verify judgments array
+            List<Map<String, Object>> judgments = (List<Map<String, Object>>) source.get("judgmentRatings");
+            assertNotNull(judgments);
+            assertFalse(judgments.isEmpty());
+
+            // Verify first judgment entry
+            Map<String, Object> firstJudgment = judgments.get(0);
+            assertNotNull(firstJudgment.get("query"));
+            List<Map<String, Object>> ratings = (List<Map<String, Object>>) firstJudgment.get("ratings");
+            assertNotNull(ratings);
+            if (implicitJudgment.equals("judgment/ImplicitJudgmentsDates.json")) {
+                assertEquals(2, ratings.size());
+            } else if (implicitJudgment.equals("judgment/ImplicitJudgmentsStartDates.json")) {
+                assertEquals(2, ratings.size());
+            } else {
+                assertEquals(2, ratings.size());
+            }
+
+            for (Map<String, Object> rating : ratings) {
+                assertNotNull(rating.get("docId"));
+                assertNotNull(rating.get("rating"));
+            }
+            Map<String, Object> secondJudgment = judgments.get(1);
+            assertNotNull(secondJudgment.get("query"));
+            List<Map<String, Object>> ratingsSecondJudgment = (List<Map<String, Object>>) secondJudgment.get("ratings");
+            assertNotNull(ratingsSecondJudgment);
+            if (implicitJudgment.equals("judgment/ImplicitJudgmentsDates.json")) {
+                assertEquals(5, ratingsSecondJudgment.size());
+            } else if (implicitJudgment.equals("judgment/ImplicitJudgmentsStartDates.json")) {
+                assertEquals(5, ratingsSecondJudgment.size());
+            } else {
+                assertEquals(5, ratingsSecondJudgment.size());
+            }
+
+            for (Map<String, Object> rating : ratingsSecondJudgment) {
+                assertNotNull(rating.get("docId"));
+                assertNotNull(rating.get("rating"));
+            }
+
+            Response deleteJudgmentsResponse = makeRequest(
+                client(),
+                RestRequest.Method.DELETE.name(),
+                getJudgmentsByIdUrl,
+                null,
+                null,
+                ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+            );
+            Map<String, Object> deleteJudgmentsResultJson = entityAsMap(deleteJudgmentsResponse);
+            assertNotNull(deleteJudgmentsResultJson);
+            assertEquals("deleted", deleteJudgmentsResultJson.get("result").toString());
+
+            expectThrows(
+                ResponseException.class,
+                () -> makeRequest(
+                    client(),
+                    RestRequest.Method.GET.name(),
+                    getJudgmentsByIdUrl,
+                    null,
+                    null,
+                    ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+                )
+            );
+        }
     }
 }

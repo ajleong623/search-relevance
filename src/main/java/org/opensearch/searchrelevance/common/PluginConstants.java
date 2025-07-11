@@ -63,8 +63,8 @@ public class PluginConstants {
 
     public static final String CLICK_MODEL = "clickModel";
     public static final String NAX_RANK = "maxRank";
-    public static final String START_DATE = "start_date";
-    public static final String END_DATE = "end_date";
+    public static final String START_DATE = "startDate";
+    public static final String END_DATE = "endDate";
 
     /**
      * Rest Input Field Names

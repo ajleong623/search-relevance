@@ -17,8 +17,8 @@ public class CoecClickModelParameters extends ClickModelParameters {
     private final int maxRank;
     private int roundingDigits = 3;
 
-    private String startDate = "";
-    private String endDate = "";
+    private String startDate;
+    private String endDate;
 
     /**
      * Creates new parameters.
@@ -31,7 +31,8 @@ public class CoecClickModelParameters extends ClickModelParameters {
     /**
      * Creates new parameters.
      * @param maxRank The max rank to use when calculating the judgments.
-     * @param dateRangeParameters The information to build a filter for the range
+     * @param startDate The start date for filtered date range.
+     * @param endDate The end date for filtered date range.
      * of UBI event dates to consider.
      */
     public CoecClickModelParameters(final int maxRank, final String startDate, final String endDate) {
