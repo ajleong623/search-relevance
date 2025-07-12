@@ -49,6 +49,8 @@ import org.opensearch.searchrelevance.dao.JudgmentCacheDao;
 import org.opensearch.searchrelevance.dao.JudgmentDao;
 import org.opensearch.searchrelevance.dao.QuerySetDao;
 import org.opensearch.searchrelevance.dao.SearchConfigurationDao;
+import org.opensearch.searchrelevance.executors.ExperimentTaskManager;
+import org.opensearch.searchrelevance.executors.SearchRelevanceExecutor;
 import org.opensearch.searchrelevance.indices.SearchRelevanceIndicesManager;
 import org.opensearch.searchrelevance.metrics.MetricsHelper;
 import org.opensearch.searchrelevance.ml.MLAccessor;
@@ -98,6 +100,7 @@ import org.opensearch.searchrelevance.transport.searchConfiguration.PutSearchCon
 import org.opensearch.searchrelevance.transport.stats.SearchRelevanceStatsAction;
 import org.opensearch.searchrelevance.transport.stats.SearchRelevanceStatsTransportAction;
 import org.opensearch.searchrelevance.utils.ClusterUtil;
+import org.opensearch.threadpool.ExecutorBuilder;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.transport.client.Client;
 import org.opensearch.watcher.ResourceWatcherService;
@@ -157,6 +160,13 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Syste
         this.judgmentCacheDao = new JudgmentCacheDao(searchRelevanceIndicesManager);
         MachineLearningNodeClient mlClient = new MachineLearningNodeClient(client);
         this.mlAccessor = new MLAccessor(mlClient);
+        SearchRelevanceExecutor.initialize(threadPool);
+        ExperimentTaskManager experimentTaskManager = new ExperimentTaskManager(
+            client,
+            evaluationResultDao,
+            experimentVariantDao,
+            threadPool
+        );
         this.metricsHelper = new MetricsHelper(clusterService, client, judgmentDao, evaluationResultDao, experimentVariantDao);
         this.settingsAccessor = new SearchRelevanceSettingsAccessor(clusterService, environment.settings());
         this.clusterUtil = new ClusterUtil(clusterService);
@@ -174,7 +184,8 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Syste
             judgmentCacheDao,
             mlAccessor,
             metricsHelper,
-            infoStatsManager
+            infoStatsManager,
+            experimentTaskManager
         );
     }
 
@@ -229,5 +240,10 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Syste
     @Override
     public List<Setting<?>> getSettings() {
         return List.of(SEARCH_RELEVANCE_WORKBENCH_ENABLED, SEARCH_RELEVANCE_STATS_ENABLED, SEARCH_RELEVANCE_QUERY_SET_MAX_LIMIT);
+    }
+
+    @Override
+    public List<ExecutorBuilder<?>> getExecutorBuilders(Settings settings) {
+        return List.of(SearchRelevanceExecutor.getExecutorBuilder(settings));
     }
 }

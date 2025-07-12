@@ -49,6 +49,15 @@ public class PointwiseExperimentIT extends BaseExperimentIT {
         // Act
         String experimentId = createPointwiseExperiment(querySetId, searchConfigurationId, judgmentId);
 
+        // Wait for the experiment to be created and indexed
+        Thread.sleep(DEFAULT_INTERVAL_MS);
+        Map<String, Object> experimentSource = pollExperimentUntilCompleted(experimentId);
+        // Assert experiment exists with correct type
+        // We don't wait for completion since it may time out in constrained environments
+        assertNotNull("Experiment should exist", experimentSource);
+        assertEquals("POINTWISE_EVALUATION", experimentSource.get("type"));
+        assertEquals(querySetId, experimentSource.get("querySetId"));
+
         // Assert
         Map<String, String> queryTextToEvaluationId = assertPointwiseExperimentCreation(
             experimentId,

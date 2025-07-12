@@ -174,27 +174,6 @@ public class MetricsHelper {
         }
     }
 
-    /**
-     * Create evaluation results for provided queryText
-     * @param queryText - queryText to be evaluated against
-     * @param indexAndQueries - "${searchConfigId}" to ["$index", "$queryPattern"] map
-     * And will add evaluationId back to experiment results
-     *  "results" {
-     *     "${queryText}": {
-     *         "${searchConfigId}": "${evaluationId}"
-     *     }
-     *  }
-     */
-    public void processEvaluationMetrics(
-        String queryText,
-        Map<String, List<String>> indexAndQueries,
-        int size,
-        List<String> judgmentIds,
-        ActionListener<Map<String, Object>> listener
-    ) {
-        processEvaluationMetrics(queryText, indexAndQueries, size, judgmentIds, listener, List.of());
-    }
-
     public void processEvaluationMetrics(
         String queryText,
         Map<String, List<String>> indexAndQueries,

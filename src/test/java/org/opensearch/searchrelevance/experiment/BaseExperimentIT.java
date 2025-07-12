@@ -223,12 +223,11 @@ public abstract class BaseExperimentIT extends BaseSearchRelevanceIT {
                     break;
                 }
             } else {
-                // assertEquals("COMPLETED", status);
+                assertEquals("COMPLETED", status);
             }
         }
-        // TODO Uncomment following assert after task scheduling has been implemented
         // Assert that we have a valid experiment status
-        // assertEquals("Experiment status must be COMPLETED", "COMPLETED", status);
+        assertEquals("Experiment status must be COMPLETED", "COMPLETED", status);
         return source;
     }
 

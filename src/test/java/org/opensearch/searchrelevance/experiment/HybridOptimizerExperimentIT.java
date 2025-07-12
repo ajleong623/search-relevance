@@ -66,8 +66,7 @@ public class HybridOptimizerExperimentIT extends BaseExperimentIT {
             assertEquals("HYBRID_OPTIMIZER", experimentSource.get("type"));
             assertEquals(querySetId, experimentSource.get("querySetId"));
 
-            // TODO Uncomment assertion after task scheduling has been implemented
-            // assertExperimentResults(experimentId);
+            assertExperimentResults(experimentId);
         } finally {
             deleteIndex(INDEX_NAME_ESCI);
         }
