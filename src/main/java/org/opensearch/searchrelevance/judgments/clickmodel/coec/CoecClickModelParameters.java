@@ -29,11 +29,10 @@ public class CoecClickModelParameters extends ClickModelParameters {
     }
 
     /**
-     * Creates new parameters.
+     * Creates new parameters which includes the UBI event dates to consider.
      * @param maxRank The max rank to use when calculating the judgments.
      * @param startDate The start date for filtered date range.
      * @param endDate The end date for filtered date range.
-     * of UBI event dates to consider.
      */
     public CoecClickModelParameters(final int maxRank, final String startDate, final String endDate) {
         this.maxRank = maxRank;

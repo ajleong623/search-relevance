@@ -141,10 +141,10 @@ public class RestPutJudgmentAction extends BaseRestHandler {
                 String clickModel = (String) source.get(CLICK_MODEL);
                 int maxRank = (int) source.get(NAX_RANK);
 
-                String start_date = (String) source.getOrDefault(START_DATE, "");
-                String end_date = (String) source.getOrDefault(END_DATE, "");
+                String startDate = (String) source.getOrDefault(START_DATE, "");
+                String endDate = (String) source.getOrDefault(END_DATE, "");
 
-                createRequest = new PutUbiJudgmentRequest(type, name, description, clickModel, maxRank, start_date, end_date);
+                createRequest = new PutUbiJudgmentRequest(type, name, description, clickModel, maxRank, startDate, endDate);
             }
             case IMPORT_JUDGMENT -> {
                 List<Map<String, Object>> judgmentRatings = (List<Map<String, Object>>) source.get(JUDGMENT_RATINGS);

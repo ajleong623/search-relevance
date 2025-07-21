@@ -45,7 +45,7 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
             ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
         );
 
-        String importDatasetBody = Files.readString(Path.of(classLoader.getResource("sample_ubi_data/SampleUBIData.json").toURI()));
+        String importDatasetBody = Files.readString(Path.of(classLoader.getResource("sample_ubi_data/SampleUBIEvents.json").toURI()));
 
         bulkIngest(UBI_EVENTS_INDEX, importDatasetBody);
     }
