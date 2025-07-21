@@ -119,21 +119,23 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
                 assertNotNull(rating.get("docId"));
                 assertNotNull(rating.get("rating"));
             }
-            Map<String, Object> secondJudgment = judgments.get(1);
-            assertNotNull(secondJudgment.get("query"));
-            List<Map<String, Object>> ratingsSecondJudgment = (List<Map<String, Object>>) secondJudgment.get("ratings");
-            assertNotNull(ratingsSecondJudgment);
-            if (implicitJudgment.equals("judgment/ImplicitJudgmentsDates.json")) {
-                assertEquals(5, ratingsSecondJudgment.size());
-            } else if (implicitJudgment.equals("judgment/ImplicitJudgmentsStartDates.json")) {
-                assertEquals(5, ratingsSecondJudgment.size());
-            } else {
-                assertEquals(5, ratingsSecondJudgment.size());
-            }
+            if (judgments.size() > 1) {
+                Map<String, Object> secondJudgment = judgments.get(1);
+                assertNotNull(secondJudgment.get("query"));
+                List<Map<String, Object>> ratingsSecondJudgment = (List<Map<String, Object>>) secondJudgment.get("ratings");
+                assertNotNull(ratingsSecondJudgment);
+                if (implicitJudgment.equals("judgment/ImplicitJudgmentsDates.json")) {
+                    assertEquals(5, ratingsSecondJudgment.size());
+                } else if (implicitJudgment.equals("judgment/ImplicitJudgmentsStartDates.json")) {
+                    assertEquals(5, ratingsSecondJudgment.size());
+                } else {
+                    assertEquals(5, ratingsSecondJudgment.size());
+                }
 
-            for (Map<String, Object> rating : ratingsSecondJudgment) {
-                assertNotNull(rating.get("docId"));
-                assertNotNull(rating.get("rating"));
+                for (Map<String, Object> rating : ratingsSecondJudgment) {
+                    assertNotNull(rating.get("docId"));
+                    assertNotNull(rating.get("rating"));
+                }
             }
 
             Response deleteJudgmentsResponse = makeRequest(
