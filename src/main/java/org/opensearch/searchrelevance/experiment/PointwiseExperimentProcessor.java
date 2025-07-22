@@ -33,6 +33,7 @@ import org.opensearch.searchrelevance.executors.ExperimentTaskManager;
 import org.opensearch.searchrelevance.model.AsyncStatus;
 import org.opensearch.searchrelevance.model.ExperimentType;
 import org.opensearch.searchrelevance.model.ExperimentVariant;
+import org.opensearch.searchrelevance.model.SearchConfigurationDetails;
 import org.opensearch.searchrelevance.utils.TimeUtils;
 
 import lombok.extern.log4j.Log4j2;
@@ -70,7 +71,7 @@ public class PointwiseExperimentProcessor {
     public void processPointwiseExperiment(
         String experimentId,
         String queryText,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> judgmentList,
         int size,
         AtomicBoolean hasFailure,
@@ -79,7 +80,7 @@ public class PointwiseExperimentProcessor {
         log.info(
             "Starting pointwise experiment {} with {} search configurations for query: {}",
             experimentId,
-            indexAndQueries.size(),
+            searchConfigurations.size(),
             queryText
         );
 
@@ -89,7 +90,7 @@ public class PointwiseExperimentProcessor {
             processExperimentWithJudgments(
                 experimentId,
                 queryText,
-                indexAndQueries,
+                searchConfigurations,
                 judgmentList,
                 size,
                 docIdToScores,
@@ -183,7 +184,7 @@ public class PointwiseExperimentProcessor {
     private void processExperimentWithJudgments(
         String experimentId,
         String queryText,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> judgmentList,
         int size,
         Map<String, String> docIdToScores,
@@ -191,17 +192,18 @@ public class PointwiseExperimentProcessor {
         ActionListener<Map<String, Object>> listener
     ) {
         // Create simple variants
-        List<ExperimentVariant> experimentVariants = createPointwiseVariants(experimentId, indexAndQueries);
+        List<ExperimentVariant> experimentVariants = createPointwiseVariants(experimentId, searchConfigurations);
 
         // Process configurations in parallel
         Map<String, Object> configToExperimentVariants = new ConcurrentHashMap<>();
         // Use ConcurrentLinkedQueue for lock-free additions
         Queue<Map<String, Object>> allResults = new ConcurrentLinkedQueue<>();
 
-        List<CompletableFuture<Void>> configFutures = indexAndQueries.entrySet().stream().map(entry -> {
+        List<CompletableFuture<Void>> configFutures = searchConfigurations.entrySet().stream().map(entry -> {
             String searchConfigId = entry.getKey();
-            String index = entry.getValue().get(0);
-            String query = entry.getValue().get(1);
+            SearchConfigurationDetails configDetails = entry.getValue();
+            String index = configDetails.getIndex();
+            String query = configDetails.getQuery();
 
             // Filter variants for this configuration
             List<ExperimentVariant> configVariants = experimentVariants.stream()
@@ -265,11 +267,14 @@ public class PointwiseExperimentProcessor {
     /**
      * Create simple experiment variants
      */
-    private List<ExperimentVariant> createPointwiseVariants(String experimentId, Map<String, List<String>> indexAndQueries) {
-        return indexAndQueries.entrySet().stream().map(entry -> {
+    private List<ExperimentVariant> createPointwiseVariants(
+        String experimentId,
+        Map<String, SearchConfigurationDetails> searchConfigurations
+    ) {
+        return searchConfigurations.entrySet().stream().map(entry -> {
             String searchConfigId = entry.getKey();
-            List<String> configDetails = entry.getValue();
-            String searchPipeline = configDetails.size() > 2 ? configDetails.get(2) : null;
+            SearchConfigurationDetails configDetails = entry.getValue();
+            String searchPipeline = configDetails.getPipeline();
 
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("searchConfigId", searchConfigId);

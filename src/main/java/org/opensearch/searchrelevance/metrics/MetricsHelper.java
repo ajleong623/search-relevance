@@ -48,6 +48,7 @@ import org.opensearch.searchrelevance.dao.JudgmentDao;
 import org.opensearch.searchrelevance.model.AsyncStatus;
 import org.opensearch.searchrelevance.model.EvaluationResult;
 import org.opensearch.searchrelevance.model.ExperimentVariant;
+import org.opensearch.searchrelevance.model.SearchConfigurationDetails;
 import org.opensearch.searchrelevance.model.builder.SearchRequestBuilder;
 import org.opensearch.searchrelevance.utils.TimeUtils;
 import org.opensearch.transport.client.Client;
@@ -60,7 +61,6 @@ import reactor.util.annotation.NonNull;
  * Manager for other local index operations.
  */
 public class MetricsHelper {
-    private final ClusterService clusterService;
     private final Client client;
     private final JudgmentDao judgmentDao;
     private final EvaluationResultDao evaluationResultDao;
@@ -74,7 +74,6 @@ public class MetricsHelper {
         @NonNull EvaluationResultDao evaluationResultDao,
         @NonNull ExperimentVariantDao experimentVariantDao
     ) {
-        this.clusterService = clusterService;
         this.client = client;
         this.judgmentDao = judgmentDao;
         this.evaluationResultDao = evaluationResultDao;
@@ -88,20 +87,25 @@ public class MetricsHelper {
      */
     public void processPairwiseMetrics(
         String queryText,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         int size,
         ActionListener<Map<String, Object>> listener
     ) {
         Map<String, List<String>> searchConfigToDocIds = Collections.synchronizedMap(new HashMap<>());
         AtomicBoolean hasFailure = new AtomicBoolean(false);
-        AtomicInteger pendingSearches = new AtomicInteger(indexAndQueries.size());
+        AtomicInteger pendingSearches = new AtomicInteger(searchConfigurations.size());
 
-        for (Map.Entry<String, List<String>> entry : indexAndQueries.entrySet()) {
+        for (Map.Entry<String, SearchConfigurationDetails> entry : searchConfigurations.entrySet()) {
             String searchConfigId = entry.getKey();
-            String index = entry.getValue().get(0);
-            String query = entry.getValue().get(1);
+            SearchConfigurationDetails configDetails = entry.getValue();
 
-            SearchRequest searchRequest = buildSearchRequest(index, query, queryText, null, size);
+            SearchRequest searchRequest = buildSearchRequest(
+                configDetails.getIndex(),
+                configDetails.getQuery(),
+                queryText,
+                configDetails.getPipeline(),
+                size
+            );
 
             client.search(searchRequest, new ActionListener<SearchResponse>() {
                 @Override

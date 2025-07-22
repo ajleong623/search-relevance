@@ -29,6 +29,7 @@ import org.opensearch.searchrelevance.executors.ExperimentTaskManager;
 import org.opensearch.searchrelevance.model.AsyncStatus;
 import org.opensearch.searchrelevance.model.ExperimentType;
 import org.opensearch.searchrelevance.model.ExperimentVariant;
+import org.opensearch.searchrelevance.model.SearchConfigurationDetails;
 import org.opensearch.searchrelevance.utils.TimeUtils;
 
 import lombok.AllArgsConstructor;
@@ -49,7 +50,7 @@ public class HybridOptimizerExperimentProcessor {
      *
      * @param experimentId Experiment ID
      * @param queryText Query text to process
-     * @param indexAndQueries Map of search configuration IDs to [index, query]
+     * @param searchConfigurations Map of search configuration IDs to SearchConfigurationDetails
      * @param judgmentList List of judgment IDs
      * @param size Result size
      * @param hasFailure Failure flag
@@ -58,7 +59,7 @@ public class HybridOptimizerExperimentProcessor {
     public void processHybridOptimizerExperiment(
         String experimentId,
         String queryText,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> judgmentList,
         int size,
         AtomicBoolean hasFailure,
@@ -119,7 +120,7 @@ public class HybridOptimizerExperimentProcessor {
             processSearchConfigurationsAsync(
                 experimentId,
                 queryText,
-                indexAndQueries,
+                searchConfigurations,
                 judgmentList,
                 size,
                 experimentVariants,
@@ -200,7 +201,7 @@ public class HybridOptimizerExperimentProcessor {
     private void processSearchConfigurationsAsync(
         String experimentId,
         String queryText,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> judgmentList,
         int size,
         List<ExperimentVariant> experimentVariants,
@@ -214,10 +215,11 @@ public class HybridOptimizerExperimentProcessor {
         // Create futures for each search configuration
         List<CompletableFuture<Map<String, Object>>> configFutures = new ArrayList<>();
 
-        for (Map.Entry<String, List<String>> entry : indexAndQueries.entrySet()) {
+        for (Map.Entry<String, SearchConfigurationDetails> entry : searchConfigurations.entrySet()) {
             String searchConfigId = entry.getKey();
-            String index = entry.getValue().get(0);
-            String query = entry.getValue().get(1);
+            SearchConfigurationDetails configDetails = entry.getValue();
+            String index = configDetails.getIndex();
+            String query = configDetails.getQuery();
 
             // Use optimized task manager to process variants
             CompletableFuture<Map<String, Object>> configFuture = taskManager.scheduleTasksAsync(

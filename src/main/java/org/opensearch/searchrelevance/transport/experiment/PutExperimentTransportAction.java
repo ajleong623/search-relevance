@@ -10,7 +10,6 @@ package org.opensearch.searchrelevance.transport.experiment;
 import static org.opensearch.searchrelevance.common.MetricsConstants.QUERY_TEXT;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -41,6 +40,7 @@ import org.opensearch.searchrelevance.model.Experiment;
 import org.opensearch.searchrelevance.model.ExperimentType;
 import org.opensearch.searchrelevance.model.QuerySet;
 import org.opensearch.searchrelevance.model.SearchConfiguration;
+import org.opensearch.searchrelevance.model.SearchConfigurationDetails;
 import org.opensearch.searchrelevance.utils.TimeUtils;
 import org.opensearch.tasks.Task;
 import org.opensearch.transport.TransportService;
@@ -140,7 +140,7 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
     }
 
     private void fetchSearchConfigurationsAsync(String experimentId, PutExperimentRequest request, List<String> queryTextWithReferences) {
-        Map<String, List<String>> indexAndQueries = new HashMap<>();
+        Map<String, SearchConfigurationDetails> searchConfigurations = new HashMap<>();
         AtomicInteger pendingConfigs = new AtomicInteger(request.getSearchConfigurationList().size());
         AtomicBoolean hasFailure = new AtomicBoolean(false);
 
@@ -150,13 +150,20 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
                     if (hasFailure.get()) return;
 
                     SearchConfiguration config = convertToSearchConfiguration(searchConfigResponse);
-                    synchronized (indexAndQueries) {
-                        indexAndQueries.put(config.id(), Arrays.asList(config.index(), config.query(), config.searchPipeline()));
+                    synchronized (searchConfigurations) {
+                        searchConfigurations.put(
+                            config.id(),
+                            SearchConfigurationDetails.builder()
+                                .index(config.index())
+                                .query(config.query())
+                                .pipeline(config.searchPipeline())
+                                .build()
+                        );
                     }
 
                     // Check if all configurations are fetched
                     if (pendingConfigs.decrementAndGet() == 0) {
-                        calculateMetricsAsync(experimentId, request, indexAndQueries, queryTextWithReferences);
+                        calculateMetricsAsync(experimentId, request, searchConfigurations, queryTextWithReferences);
                     }
                 } catch (Exception e) {
                     if (hasFailure.compareAndSet(false, true)) {
@@ -221,20 +228,20 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
     private void calculateMetricsAsync(
         String experimentId,
         PutExperimentRequest request,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> queryTextWithReferences
     ) {
-        if (queryTextWithReferences == null || indexAndQueries == null) {
+        if (queryTextWithReferences == null || searchConfigurations == null) {
             throw new IllegalStateException("Missing required data for metrics calculation");
         }
 
-        processQueryTextMetrics(experimentId, request, indexAndQueries, queryTextWithReferences);
+        processQueryTextMetrics(experimentId, request, searchConfigurations, queryTextWithReferences);
     }
 
     private void processQueryTextMetrics(
         String experimentId,
         PutExperimentRequest request,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> queryTexts
     ) {
         List<Map<String, Object>> finalResults = Collections.synchronizedList(new ArrayList<>());
@@ -244,7 +251,7 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
         executeExperimentEvaluation(
             experimentId,
             request,
-            indexAndQueries,
+            searchConfigurations,
             queryTexts,
             finalResults,
             pendingQueries,
@@ -256,7 +263,7 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
     private void executeExperimentEvaluation(
         String experimentId,
         PutExperimentRequest request,
-        Map<String, List<String>> indexAndQueries,
+        Map<String, SearchConfigurationDetails> searchConfigurations,
         List<String> queryTexts,
         List<Map<String, Object>> finalResults,
         AtomicInteger pendingQueries,
@@ -271,7 +278,7 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
             if (request.getType() == ExperimentType.PAIRWISE_COMPARISON) {
                 metricsHelper.processPairwiseMetrics(
                     queryText,
-                    indexAndQueries,
+                    searchConfigurations,
                     request.getSize(),
                     ActionListener.wrap(
                         queryResults -> handleQueryResults(
@@ -292,7 +299,7 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
                 hybridOptimizerExperimentProcessor.processHybridOptimizerExperiment(
                     experimentId,
                     queryText,
-                    indexAndQueries,
+                    searchConfigurations,
                     judgmentList,
                     request.getSize(),
                     hasFailure,
@@ -314,7 +321,7 @@ public class PutExperimentTransportAction extends HandledTransportAction<PutExpe
                 pointwiseExperimentProcessor.processPointwiseExperiment(
                     experimentId,
                     queryText,
-                    indexAndQueries,
+                    searchConfigurations,
                     judgmentList,
                     request.getSize(),
                     hasFailure,

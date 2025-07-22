@@ -31,6 +31,7 @@ import org.opensearch.core.action.ActionListener;
 import org.opensearch.searchrelevance.dao.JudgmentDao;
 import org.opensearch.searchrelevance.executors.ExperimentTaskManager;
 import org.opensearch.searchrelevance.model.ExperimentType;
+import org.opensearch.searchrelevance.model.SearchConfigurationDetails;
 import org.opensearch.test.OpenSearchTestCase;
 
 import lombok.SneakyThrows;
@@ -61,8 +62,11 @@ public class PointwiseExperimentProcessorTests extends OpenSearchTestCase {
         // Setup test data
         String experimentId = "test-experiment-id";
         String queryText = "test query";
-        Map<String, List<String>> indexAndQueries = new HashMap<>();
-        indexAndQueries.put("config1", Arrays.asList("test-index", "test-query", "test-pipeline"));
+        Map<String, SearchConfigurationDetails> searchConfigurations = new HashMap<>();
+        searchConfigurations.put(
+            "config1",
+            SearchConfigurationDetails.builder().index("test-index").query("test-query").pipeline("test-pipeline").build()
+        );
         List<String> judgmentList = Arrays.asList("judgment1");
         int size = 10;
         AtomicBoolean hasFailure = new AtomicBoolean(false);
@@ -115,7 +119,7 @@ public class PointwiseExperimentProcessorTests extends OpenSearchTestCase {
         };
 
         // Execute
-        processor.processPointwiseExperiment(experimentId, queryText, indexAndQueries, judgmentList, size, hasFailure, listener);
+        processor.processPointwiseExperiment(experimentId, queryText, searchConfigurations, judgmentList, size, hasFailure, listener);
 
         // Wait for async operation to complete
         assertTrue("Async operation should complete within timeout", latch.await(5, TimeUnit.SECONDS));
@@ -129,8 +133,11 @@ public class PointwiseExperimentProcessorTests extends OpenSearchTestCase {
         // Setup test data
         String experimentId = "test-experiment-id";
         String queryText = "test query";
-        Map<String, List<String>> indexAndQueries = new HashMap<>();
-        indexAndQueries.put("config1", Arrays.asList("test-index", "test-query"));
+        Map<String, SearchConfigurationDetails> searchConfigurations = new HashMap<>();
+        searchConfigurations.put(
+            "config1",
+            SearchConfigurationDetails.builder().index("test-index").query("test-query").pipeline(null).build()
+        );
         List<String> judgmentList = Arrays.asList("judgment1");
         int size = 10;
         AtomicBoolean hasFailure = new AtomicBoolean(false);
@@ -159,7 +166,7 @@ public class PointwiseExperimentProcessorTests extends OpenSearchTestCase {
         };
 
         // Execute
-        processor.processPointwiseExperiment(experimentId, queryText, indexAndQueries, judgmentList, size, hasFailure, listener);
+        processor.processPointwiseExperiment(experimentId, queryText, searchConfigurations, judgmentList, size, hasFailure, listener);
 
         // Wait for async operation to complete
         assertTrue("Async operation should complete within timeout", latch.await(5, TimeUnit.SECONDS));

@@ -43,7 +43,7 @@ sdk install java 21.0.2-open
 sdk use java 21.0.2-open
 ``````
 
-JDK versions 21 and 23 were tested and are fully supported for local development.
+JDK versions 21 and 24 were tested and are fully supported for local development.
 
 ## Use an Editor
 
