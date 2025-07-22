@@ -100,6 +100,11 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
             // Verify judgments array
             List<Map<String, Object>> judgments = (List<Map<String, Object>>) source.get("judgmentRatings");
             assertNotNull(judgments);
+            if (implicitJudgment.equals("judgment/ImplicitJudgmentsDatesOutOfBounds.json")) {
+                assertTrue(judgments.isEmpty());
+                deleteJudgment(getJudgmentsByIdUrl);
+                return;
+            }
             assertFalse(judgments.isEmpty());
 
             // Verify first judgment entry
@@ -108,9 +113,7 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
             List<Map<String, Object>> ratings = (List<Map<String, Object>>) firstJudgment.get("ratings");
             assertNotNull(ratings);
             if (implicitJudgment.equals("judgment/ImplicitJudgmentsDates.json")) {
-                assertEquals(2, ratings.size());
-            } else if (implicitJudgment.equals("judgment/ImplicitJudgmentsStartDates.json")) {
-                assertEquals(2, ratings.size());
+                assertEquals(4, ratings.size());
             } else {
                 assertEquals(2, ratings.size());
             }
@@ -119,14 +122,13 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
                 assertNotNull(rating.get("docId"));
                 assertNotNull(rating.get("rating"));
             }
+
             if (judgments.size() > 1) {
                 Map<String, Object> secondJudgment = judgments.get(1);
                 assertNotNull(secondJudgment.get("query"));
                 List<Map<String, Object>> ratingsSecondJudgment = (List<Map<String, Object>>) secondJudgment.get("ratings");
                 assertNotNull(ratingsSecondJudgment);
                 if (implicitJudgment.equals("judgment/ImplicitJudgmentsDates.json")) {
-                    assertEquals(5, ratingsSecondJudgment.size());
-                } else if (implicitJudgment.equals("judgment/ImplicitJudgmentsStartDates.json")) {
                     assertEquals(5, ratingsSecondJudgment.size());
                 } else {
                     assertEquals(5, ratingsSecondJudgment.size());
@@ -138,29 +140,33 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
                 }
             }
 
-            Response deleteJudgmentsResponse = makeRequest(
+            deleteJudgment(getJudgmentsByIdUrl);
+        }
+    }
+
+    private void deleteJudgment(String getJudgmentsByIdUrl) throws IOException {
+        Response deleteJudgmentsResponse = makeRequest(
+            client(),
+            RestRequest.Method.DELETE.name(),
+            getJudgmentsByIdUrl,
+            null,
+            null,
+            ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+        );
+        Map<String, Object> deleteJudgmentsResultJson = entityAsMap(deleteJudgmentsResponse);
+        assertNotNull(deleteJudgmentsResultJson);
+        assertEquals("deleted", deleteJudgmentsResultJson.get("result").toString());
+
+        expectThrows(
+            ResponseException.class,
+            () -> makeRequest(
                 client(),
-                RestRequest.Method.DELETE.name(),
+                RestRequest.Method.GET.name(),
                 getJudgmentsByIdUrl,
                 null,
                 null,
                 ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
-            );
-            Map<String, Object> deleteJudgmentsResultJson = entityAsMap(deleteJudgmentsResponse);
-            assertNotNull(deleteJudgmentsResultJson);
-            assertEquals("deleted", deleteJudgmentsResultJson.get("result").toString());
-
-            expectThrows(
-                ResponseException.class,
-                () -> makeRequest(
-                    client(),
-                    RestRequest.Method.GET.name(),
-                    getJudgmentsByIdUrl,
-                    null,
-                    null,
-                    ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
-                )
-            );
-        }
+            )
+        );
     }
 }
