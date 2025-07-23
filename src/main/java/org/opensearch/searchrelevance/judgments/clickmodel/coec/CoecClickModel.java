@@ -81,10 +81,14 @@ public class CoecClickModel extends ClickModel {
         String startDate = parameters.getStartDate();
         String endDate = parameters.getEndDate();
 
-        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp")
-            .format("yyyy-MM-dd")
-            .lte(endDate.equals("") ? null : endDate)
-            .gte(startDate.equals("") ? null : startDate);
+        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp");
+        try {
+            dateFilter.format("yyyy-MM-dd")
+                .lte(endDate.equals("") ? null : endDate)
+                .gte(startDate.equals("") ? null : startDate);
+        } catch (Exception e) {
+            LOGGER.error(e);
+        }
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
             .must(QueryBuilders.rangeQuery("event_attributes.position.ordinal").lte(parameters.getMaxRank()))
@@ -169,10 +173,14 @@ public class CoecClickModel extends ClickModel {
         String startDate = parameters.getStartDate();
         String endDate = parameters.getEndDate();
 
-        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp")
-            .format("yyyy-MM-dd")
-            .lte(endDate.equals("") ? null : endDate)
-            .gte(startDate.equals("") ? null : startDate);
+        RangeQueryBuilder dateFilter = QueryBuilders.rangeQuery("timestamp");
+        try {
+            dateFilter.format("yyyy-MM-dd")
+                .lte(endDate.equals("") ? null : endDate)
+                .gte(startDate.equals("") ? null : startDate);
+        } catch (Exception e) {
+            LOGGER.error(e);
+        }
 
         BoolQueryBuilder queryBuilder = QueryBuilders.boolQuery()
             .must(QueryBuilders.rangeQuery("event_attributes.position.ordinal").lte(parameters.getMaxRank()))

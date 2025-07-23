@@ -57,8 +57,7 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
         List<String> implicitJudgments = List.of(
             "judgment/ImplicitJudgmentsDates.json",
             "judgment/ImplicitJudgmentsStartDates.json",
-            "judgment/ImplicitJudgmentsDatesOutOfBounds.json",
-            "judgment/MalformedJudgmentsDates"
+            "judgment/ImplicitJudgmentsDatesOutOfBounds.json"
         );
         for (String implicitJudgment : implicitJudgments) {
             String requestBody = Files.readString(Path.of(classLoader.getResource(implicitJudgment).toURI()));
@@ -143,6 +142,18 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
 
             deleteJudgment(getJudgmentsByIdUrl);
         }
+
+        String malformedRequestUrl = "judgment/MalformedJudgmentsDates";
+        String requestBody = Files.readString(Path.of(classLoader.getResource(malformedRequestUrl).toURI()));
+        Response importResponse = makeRequest(
+            client(),
+            RestRequest.Method.PUT.name(),
+            JUDGMENTS_URL,
+            null,
+            toHttpEntity(requestBody),
+            ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+        );
+
     }
 
     private void deleteJudgment(String getJudgmentsByIdUrl) throws IOException {
