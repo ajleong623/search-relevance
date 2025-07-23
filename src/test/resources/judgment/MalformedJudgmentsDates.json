@@ -3,5 +3,6 @@
   "maxRank": 20,
   "name": "Implicit Judgements",
   "type": "UBI_JUDGMENT",
-  "startDate" : "2024-122-145"
+  "startDate" : "2024-12-15",
+  "endDate" : "2024-12-118"
 }

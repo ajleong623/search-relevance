@@ -145,13 +145,7 @@ public class UbiJudgmentsProcessor implements BaseJudgmentsProcessor {
                     @Override
                     public void onFailure(Exception e) {
                         LOGGER.error("Failed to calculate COEC click model judgments", e);
-                        listener.onFailure(
-                            new SearchRelevanceException(
-                                "Failed to calculate COEC click model judgments",
-                                e,
-                                RestStatus.INTERNAL_SERVER_ERROR
-                            )
-                        );
+                        listener.onFailure(new SearchRelevanceException(e.getLocalizedMessage(), e, RestStatus.INTERNAL_SERVER_ERROR));
                     }
                 });
             } catch (Exception e) {
