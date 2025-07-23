@@ -57,7 +57,8 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
         List<String> implicitJudgments = List.of(
             "judgment/ImplicitJudgmentsDates.json",
             "judgment/ImplicitJudgmentsStartDates.json",
-            "judgment/ImplicitJudgmentsDatesOutOfBounds.json"
+            "judgment/ImplicitJudgmentsDatesOutOfBounds.json",
+            "judgment/MalformedJudgmentsDates"
         );
         for (String implicitJudgment : implicitJudgments) {
             String requestBody = Files.readString(Path.of(classLoader.getResource(implicitJudgment).toURI()));

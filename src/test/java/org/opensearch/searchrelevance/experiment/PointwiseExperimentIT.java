@@ -170,7 +170,10 @@ public class PointwiseExperimentIT extends BaseExperimentIT {
             // Verify experiment fields are present for pointwise evaluation experiments
             assertNotNull("experimentId should be present", evaluationSource.get("experimentId"));
             assertNotNull("experimentVariantId should be null for pointwise evaluation", evaluationSource.get("experimentVariantId"));
-            assertNull("experimentVariantParameters should be null for pointwise evaluation", evaluationSource.get("experimentVariantParameters"));
+            assertNull(
+                "experimentVariantParameters should be null for pointwise evaluation",
+                evaluationSource.get("experimentVariantParameters")
+            );
 
             if (EXPECT_EVALUATION_RESULTS.containsKey(actualQueryTerm)) {
                 Map<String, Object> expectedResult = (Map<String, Object>) EXPECT_EVALUATION_RESULTS.get(actualQueryTerm);
