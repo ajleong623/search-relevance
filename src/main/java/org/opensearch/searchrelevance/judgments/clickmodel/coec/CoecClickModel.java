@@ -72,7 +72,7 @@ public class CoecClickModel extends ClickModel {
             try {
                 formatter.parse(startDate);
             } catch (IllegalArgumentException e) {
-                LOGGER.error(e);
+                LOGGER.error("failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]");
                 listener.onFailure(
                     new SearchRelevanceException(
                         "failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]",
@@ -82,7 +82,7 @@ public class CoecClickModel extends ClickModel {
                 );
                 return;
             } catch (DateTimeParseException e) {
-                LOGGER.error(e);
+                LOGGER.error("failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]");
                 listener.onFailure(
                     new SearchRelevanceException(
                         "failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]",
@@ -98,7 +98,7 @@ public class CoecClickModel extends ClickModel {
             try {
                 formatter.parse(endDate);
             } catch (IllegalArgumentException e) {
-                LOGGER.error(e);
+                LOGGER.error("failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]");
                 listener.onFailure(
                     new SearchRelevanceException(
                         "failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]",
@@ -108,7 +108,7 @@ public class CoecClickModel extends ClickModel {
                 );
                 return;
             } catch (DateTimeParseException e) {
-                LOGGER.error(e);
+                LOGGER.error("failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]");
                 listener.onFailure(
                     new SearchRelevanceException(
                         "failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]",

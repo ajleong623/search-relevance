@@ -320,7 +320,10 @@ public class HybridOptimizerExperimentIT extends BaseExperimentIT {
         // Verify experiment fields are present for hybrid optimizer experiments
         assertNotNull("experimentId should be present", evaluationSource.get("experimentId"));
         assertNotNull("experimentVariantId should be present for hybrid experiments", evaluationSource.get("experimentVariantId"));
-        assertNotNull("experimentVariantParameters should be present for hybrid experiments", evaluationSource.get("experimentVariantParameters"));
+        assertNotNull(
+            "experimentVariantParameters should be present for hybrid experiments",
+            evaluationSource.get("experimentVariantParameters")
+        );
 
         // Verify we have metrics
         List<Map> metrics = (List<Map>) evaluationSource.get("metrics");
