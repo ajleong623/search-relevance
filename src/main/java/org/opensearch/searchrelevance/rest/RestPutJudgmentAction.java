@@ -50,6 +50,8 @@ import org.opensearch.searchrelevance.transport.judgment.PutJudgmentAction;
 import org.opensearch.searchrelevance.transport.judgment.PutJudgmentRequest;
 import org.opensearch.searchrelevance.transport.judgment.PutLlmJudgmentRequest;
 import org.opensearch.searchrelevance.transport.judgment.PutUbiJudgmentRequest;
+import org.opensearch.searchrelevance.utils.DateValidationUtil;
+import org.opensearch.searchrelevance.utils.DateValidationUtil.DateValidationResult;
 import org.opensearch.searchrelevance.utils.ParserUtils;
 import org.opensearch.searchrelevance.utils.TextValidationUtil;
 import org.opensearch.transport.client.node.NodeClient;
@@ -143,6 +145,21 @@ public class RestPutJudgmentAction extends BaseRestHandler {
 
                 String startDate = (String) source.getOrDefault(START_DATE, "");
                 String endDate = (String) source.getOrDefault(END_DATE, "");
+
+                DateValidationResult validStart = DateValidationUtil.validateDate(startDate);
+                DateValidationResult validEnd = DateValidationUtil.validateDate(endDate);
+
+                if ((validStart.isValid() == false)) {
+                    return channel -> channel.sendResponse(
+                        new BytesRestResponse(RestStatus.BAD_REQUEST, "Invalid start date format: " + validStart.getErrorMessage())
+                    );
+                }
+
+                if ((validEnd.isValid() == false)) {
+                    return channel -> channel.sendResponse(
+                        new BytesRestResponse(RestStatus.BAD_REQUEST, "Invalid end date format: " + validEnd.getErrorMessage())
+                    );
+                }
 
                 createRequest = new PutUbiJudgmentRequest(type, name, description, clickModel, maxRank, startDate, endDate);
             }

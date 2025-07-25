@@ -145,42 +145,17 @@ public class CalculateJudgmentsIT extends BaseSearchRelevanceIT {
 
         String malformedRequestUrl = "judgment/MalformedJudgmentsDates.json";
         String requestBody = Files.readString(Path.of(classLoader.getResource(malformedRequestUrl).toURI()));
-        Response importResponse = makeRequest(
-            client(),
-            RestRequest.Method.PUT.name(),
-            JUDGMENTS_URL,
-            null,
-            toHttpEntity(requestBody),
-            ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+        expectThrows(
+            ResponseException.class,
+            () -> makeRequest(
+                client(),
+                RestRequest.Method.PUT.name(),
+                JUDGMENTS_URL,
+                null,
+                toHttpEntity(requestBody),
+                ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
+            )
         );
-        Map<String, Object> importResultJson = entityAsMap(importResponse);
-        assertNotNull(importResultJson);
-        String judgmentsId = importResultJson.get("judgment_id").toString();
-        assertNotNull(judgmentsId);
-
-        // wait for completion of import action
-        Thread.sleep(DEFAULT_INTERVAL_MS);
-
-        String getJudgmentsByIdUrl = String.join("/", JUDGMENT_INDEX, "_doc", judgmentsId);
-        Response getJudgmentsResponse = makeRequest(
-            adminClient(),
-            RestRequest.Method.GET.name(),
-            getJudgmentsByIdUrl,
-            null,
-            null,
-            ImmutableList.of(new BasicHeader(HttpHeaders.USER_AGENT, DEFAULT_USER_AGENT))
-        );
-        Map<String, Object> getJudgmentsResultJson = entityAsMap(getJudgmentsResponse);
-        assertNotNull(getJudgmentsResultJson);
-        assertEquals(judgmentsId, getJudgmentsResultJson.get("_id").toString());
-
-        Map<String, Object> source = (Map<String, Object>) getJudgmentsResultJson.get("_source");
-        assertNotNull(source);
-        assertNotNull(source.get("id"));
-        assertNotNull(source.get("timestamp"));
-        assertEquals("Implicit Judgements", source.get("name"));
-        assertEquals("ERROR", source.get("status"));
-        deleteJudgment(getJudgmentsByIdUrl);
     }
 
     private void deleteJudgment(String getJudgmentsByIdUrl) throws IOException {

@@ -9,7 +9,6 @@ package org.opensearch.searchrelevance.judgments.clickmodel.coec;
 
 import static org.opensearch.searchrelevance.common.PluginConstants.UBI_EVENTS_INDEX;
 
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,10 +26,8 @@ import org.opensearch.action.search.ClearScrollRequest;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchScrollRequest;
-import org.opensearch.common.time.DateFormatter;
 import org.opensearch.common.unit.TimeValue;
 import org.opensearch.core.action.ActionListener;
-import org.opensearch.core.rest.RestStatus;
 import org.opensearch.index.query.BoolQueryBuilder;
 import org.opensearch.index.query.QueryBuilders;
 import org.opensearch.index.query.RangeQueryBuilder;
@@ -39,7 +36,6 @@ import org.opensearch.search.aggregations.AggregationBuilders;
 import org.opensearch.search.aggregations.bucket.terms.Terms;
 import org.opensearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.opensearch.search.builder.SearchSourceBuilder;
-import org.opensearch.searchrelevance.exception.SearchRelevanceException;
 import org.opensearch.searchrelevance.judgments.clickmodel.ClickModel;
 import org.opensearch.searchrelevance.model.ClickthroughRate;
 import org.opensearch.searchrelevance.model.ubi.event.UbiEvent;
@@ -65,60 +61,6 @@ public class CoecClickModel extends ClickModel {
 
     @Override
     public void calculateJudgments(ActionListener<List<Map<String, Object>>> listener) {
-        String startDate = parameters.getStartDate();
-        String endDate = parameters.getEndDate();
-        DateFormatter formatter = DateFormatter.forPattern("yyyy-MM-dd");
-        if (!startDate.equals("")) {
-            try {
-                formatter.parse(startDate);
-            } catch (IllegalArgumentException e) {
-                LOGGER.error("failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]");
-                listener.onFailure(
-                    new SearchRelevanceException(
-                        "failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]",
-                        e,
-                        RestStatus.BAD_REQUEST
-                    )
-                );
-                return;
-            } catch (DateTimeParseException e) {
-                LOGGER.error("failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]");
-                listener.onFailure(
-                    new SearchRelevanceException(
-                        "failed to parse date field [" + startDate + "] with format [yyyy-MM-dd]",
-                        e,
-                        RestStatus.BAD_REQUEST
-                    )
-                );
-                return;
-            }
-        }
-
-        if (!endDate.equals("")) {
-            try {
-                formatter.parse(endDate);
-            } catch (IllegalArgumentException e) {
-                LOGGER.error("failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]");
-                listener.onFailure(
-                    new SearchRelevanceException(
-                        "failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]",
-                        e,
-                        RestStatus.BAD_REQUEST
-                    )
-                );
-                return;
-            } catch (DateTimeParseException e) {
-                LOGGER.error("failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]");
-                listener.onFailure(
-                    new SearchRelevanceException(
-                        "failed to parse date field [" + endDate + "] with format [yyyy-MM-dd]",
-                        e,
-                        RestStatus.BAD_REQUEST
-                    )
-                );
-                return;
-            }
-        }
         // Step 1: Calculate rank-aggregated click-through
         getRankAggregatedClickThrough(ActionListener.wrap(rankAggregatedClickThrough -> {
             // Step 2: Get clickthrough rates
