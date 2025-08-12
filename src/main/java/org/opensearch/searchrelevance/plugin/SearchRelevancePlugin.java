@@ -13,6 +13,8 @@ import static org.opensearch.searchrelevance.settings.SearchRelevanceSettings.SE
 import static org.opensearch.searchrelevance.settings.SearchRelevanceSettings.SEARCH_RELEVANCE_STATS_ENABLED;
 import static org.opensearch.searchrelevance.settings.SearchRelevanceSettings.SEARCH_RELEVANCE_WORKBENCH_ENABLED;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
@@ -29,9 +31,15 @@ import org.opensearch.common.settings.SettingsFilter;
 import org.opensearch.core.action.ActionResponse;
 import org.opensearch.core.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.core.xcontent.NamedXContentRegistry;
+import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.core.xcontent.XContentParserUtils;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.indices.SystemIndexDescriptor;
+import org.opensearch.jobscheduler.spi.JobSchedulerExtension;
+import org.opensearch.jobscheduler.spi.ScheduledJobParser;
+import org.opensearch.jobscheduler.spi.ScheduledJobRunner;
+import org.opensearch.jobscheduler.spi.schedule.ScheduleParser;
 import org.opensearch.ml.client.MachineLearningNodeClient;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.ClusterPlugin;
@@ -54,6 +62,7 @@ import org.opensearch.searchrelevance.executors.SearchRelevanceExecutor;
 import org.opensearch.searchrelevance.indices.SearchRelevanceIndicesManager;
 import org.opensearch.searchrelevance.metrics.MetricsHelper;
 import org.opensearch.searchrelevance.ml.MLAccessor;
+import org.opensearch.searchrelevance.model.ExperimentType;
 import org.opensearch.searchrelevance.rest.RestCreateQuerySetAction;
 import org.opensearch.searchrelevance.rest.RestDeleteExperimentAction;
 import org.opensearch.searchrelevance.rest.RestDeleteJudgmentAction;
@@ -68,6 +77,8 @@ import org.opensearch.searchrelevance.rest.RestPutJudgmentAction;
 import org.opensearch.searchrelevance.rest.RestPutQuerySetAction;
 import org.opensearch.searchrelevance.rest.RestPutSearchConfigurationAction;
 import org.opensearch.searchrelevance.rest.RestSearchRelevanceStatsAction;
+import org.opensearch.searchrelevance.scheduler.SearchRelevanceJobParameters;
+import org.opensearch.searchrelevance.scheduler.SearchRelevanceJobRunner;
 import org.opensearch.searchrelevance.settings.SearchRelevanceSettingsAccessor;
 import org.opensearch.searchrelevance.stats.events.EventStatsManager;
 import org.opensearch.searchrelevance.stats.info.InfoStatsManager;
@@ -108,7 +119,15 @@ import org.opensearch.watcher.ResourceWatcherService;
 /**
  * Search Relevance plugin class
  */
-public class SearchRelevancePlugin extends Plugin implements ActionPlugin, SystemIndexPlugin, ClusterPlugin, ExtensiblePlugin {
+public class SearchRelevancePlugin extends Plugin
+    implements
+        ActionPlugin,
+        SystemIndexPlugin,
+        ClusterPlugin,
+        ExtensiblePlugin,
+        JobSchedulerExtension {
+
+    static final String JOB_INDEX_NAME = ".scheduler_sample_extension";
 
     private Client client;
     private ClusterService clusterService;
@@ -172,6 +191,10 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Syste
         this.clusterUtil = new ClusterUtil(clusterService);
         this.infoStatsManager = new InfoStatsManager(settingsAccessor);
         EventStatsManager.instance().initialize(settingsAccessor);
+        SearchRelevanceJobRunner jobRunner = SearchRelevanceJobRunner.getJobRunnerInstance();
+        jobRunner.setClusterService(clusterService);
+        jobRunner.setThreadPool(threadPool);
+        jobRunner.setClient(client);
 
         return List.of(
             searchRelevanceIndicesManager,
@@ -235,6 +258,89 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Syste
             new ActionHandler<>(GetExperimentAction.INSTANCE, GetExperimentTransportAction.class),
             new ActionHandler<>(SearchRelevanceStatsAction.INSTANCE, SearchRelevanceStatsTransportAction.class)
         );
+    }
+
+    @Override
+    public String getJobType() {
+        return "scheduler_sample_extension";
+    }
+
+    @Override
+    public String getJobIndex() {
+        return JOB_INDEX_NAME;
+    }
+
+    @Override
+    public ScheduledJobRunner getJobRunner() {
+        return SearchRelevanceJobRunner.getJobRunnerInstance();
+    }
+
+    @Override
+    public ScheduledJobParser getJobParser() {
+        return (parser, id, jobDocVersion) -> {
+            SearchRelevanceJobParameters jobParameter = new SearchRelevanceJobParameters();
+            XContentParserUtils.ensureExpectedToken(XContentParser.Token.START_OBJECT, parser.nextToken(), parser);
+
+            while (!parser.nextToken().equals(XContentParser.Token.END_OBJECT)) {
+                String fieldName = parser.currentName();
+                parser.nextToken();
+                switch (fieldName) {
+                    case SearchRelevanceJobParameters.NAME_FIELD:
+                        jobParameter.setJobName(parser.text());
+                        break;
+                    case SearchRelevanceJobParameters.ENABLED_FILED:
+                        jobParameter.setEnabled(parser.booleanValue());
+                        break;
+                    case SearchRelevanceJobParameters.ENABLED_TIME_FILED:
+                        jobParameter.setEnabledTime(parseInstantValue(parser));
+                        break;
+                    case SearchRelevanceJobParameters.LAST_UPDATE_TIME_FIELD:
+                        jobParameter.setLastUpdateTime(parseInstantValue(parser));
+                        break;
+                    case SearchRelevanceJobParameters.SCHEDULE_FIELD:
+                        jobParameter.setSchedule(ScheduleParser.parse(parser));
+                        break;
+                    case SearchRelevanceJobParameters.INDEX_NAME_FIELD:
+                        jobParameter.setIndexToWatch(parser.text());
+                        break;
+                    case SearchRelevanceJobParameters.LOCK_DURATION_SECONDS:
+                        jobParameter.setLockDurationSeconds(parser.longValue());
+                        break;
+                    case SearchRelevanceJobParameters.JITTER:
+                        jobParameter.setJitter(parser.doubleValue());
+                        break;
+                    case SearchRelevanceJobParameters.EXPERIMENT_TYPE:
+                        jobParameter.setExperimentType(ExperimentType.valueOf(parser.text()));
+                        break;
+                    case SearchRelevanceJobParameters.EXPERIMENT_QUERY_SET_ID:
+                        jobParameter.setExperimentQuerySetId(parser.text());
+                        break;
+                    case SearchRelevanceJobParameters.EXPERIMENT_SEARCH_CONFIGURATION_LIST:
+                        jobParameter.setExperimentSearchConfigurationList((List<String>) (Object) parser.list());
+                        break;
+                    case SearchRelevanceJobParameters.EXPERIMENT_JUDGMENT_LIST:
+                        jobParameter.setExperimentJudgmentList((List<String>) (Object) parser.list());
+                        break;
+                    case SearchRelevanceJobParameters.EXPERIMENT_SIZE:
+                        jobParameter.setExperimentSize(parser.intValue());
+                        break;
+                    default:
+                        XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());
+                }
+            }
+            return jobParameter;
+        };
+    }
+
+    private Instant parseInstantValue(XContentParser parser) throws IOException {
+        if (XContentParser.Token.VALUE_NULL.equals(parser.currentToken())) {
+            return null;
+        }
+        if (parser.currentToken().isValue()) {
+            return Instant.ofEpochMilli(parser.longValue());
+        }
+        XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());
+        return null;
     }
 
     @Override

@@ -175,6 +175,7 @@ opensearchplugin {
     classname "${packagePath}.${pathToPlugin}.${pluginClassName}"
     licenseFile rootProject.file('LICENSE.txt')
     noticeFile rootProject.file('NOTICE.txt')
+    extendedPlugins = ['opensearch-job-scheduler']
 }
 
 dependencyLicenses.enabled = false
@@ -195,6 +196,8 @@ dependencies {
     implementation "org.opensearch:opensearch:${opensearch_version}"
     api "org.opensearch:opensearch:${opensearch_version}"
     api group: 'org.opensearch', name:'opensearch-ml-client', version: "${opensearch_build}"
+    compileOnly "org.opensearch:opensearch-job-scheduler-spi:${opensearch_build}"
+    compileOnly "org.opensearch:opensearch-job-scheduler:${opensearch_build}"
     implementation group: 'com.google.guava', name: 'guava', version:'33.4.8-jre'
     compileOnly group: 'commons-lang', name: 'commons-lang', version: '2.6'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.18.0'
@@ -230,6 +233,7 @@ dependencies {
     zipArchive group: 'org.opensearch.plugin', name:'neural-search', version: "${opensearch_build}"
     zipArchive group: 'org.opensearch.plugin', name:'opensearch-ubi', version: "${opensearch_build}"
     opensearchPlugin "org.opensearch.plugin:opensearch-security:${opensearch_build}@zip"
+    //opensearchPlugin "org.opensearch.plugin:opensearch-job-scheduler:${opensearch_build}@zip"
 
     configurations.all {
         resolutionStrategy {

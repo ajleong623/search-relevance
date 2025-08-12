@@ -17,20 +17,28 @@ import static org.opensearch.searchrelevance.common.PluginConstants.SIZE;
 import static org.opensearch.searchrelevance.common.PluginConstants.TYPE;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
 import org.opensearch.ExceptionsHelper;
+import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
+import org.opensearch.action.support.WriteRequest;
+import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.core.action.ActionListener;
 import org.opensearch.core.rest.RestStatus;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.core.xcontent.XContentParser;
+import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
+import org.opensearch.jobscheduler.spi.schedule.Schedule;
 import org.opensearch.rest.BaseRestHandler;
 import org.opensearch.rest.BytesRestResponse;
 import org.opensearch.rest.RestRequest;
 import org.opensearch.searchrelevance.exception.SearchRelevanceException;
 import org.opensearch.searchrelevance.model.ExperimentType;
+import org.opensearch.searchrelevance.scheduler.SearchRelevanceJobParameters;
 import org.opensearch.searchrelevance.settings.SearchRelevanceSettingsAccessor;
 import org.opensearch.searchrelevance.transport.experiment.PutExperimentAction;
 import org.opensearch.searchrelevance.transport.experiment.PutExperimentRequest;
@@ -47,6 +55,7 @@ import lombok.extern.log4j.Log4j2;
 @AllArgsConstructor
 public class RestPutExperimentAction extends BaseRestHandler {
     private static final String PUT_EXPERIMENT_ACTION = "put_experiment_action";
+    static final String JOB_INDEX_NAME = ".scheduler_sample_extension";
     private SearchRelevanceSettingsAccessor settingsAccessor;
 
     @Override
@@ -137,7 +146,43 @@ public class RestPutExperimentAction extends BaseRestHandler {
                     builder.field("experiment_id", response.getId());
                     builder.field("experiment_result", response.getResult());
                     builder.endObject();
-                    channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
+                    String interval = (String) source.get("interval");
+                    if (interval != null) {
+                        Schedule schedule = new IntervalSchedule(Instant.now(), Integer.parseInt(interval), ChronoUnit.SECONDS);
+                        SearchRelevanceJobParameters jobParameter = new SearchRelevanceJobParameters(
+                            "1",
+                            "experiment-parameters",
+                            "index",
+                            schedule,
+                            20L,
+                            null,
+                            createRequest.getType(),
+                            createRequest.getQuerySetId(),
+                            createRequest.getSearchConfigurationList(),
+                            createRequest.getJudgmentList(),
+                            createRequest.getSize()
+                        );
+                        jobParameter.setEnabled(true);
+                        // index the job parameter
+                        IndexRequest indexRequest = new IndexRequest().index(JOB_INDEX_NAME)
+                            .id("1")
+                            .source(jobParameter.toXContent(JsonXContent.contentBuilder(), null))
+                            .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE);
+                        client.index(indexRequest, new ActionListener<IndexResponse>() {
+                            @Override
+                            public void onResponse(IndexResponse indexResponse) {
+                                log.info("job has been indexed successfully!!");
+                                channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
+                            }
+
+                            @Override
+                            public void onFailure(Exception e) {
+                                onFailure(e);
+                            }
+                        });
+                    } else {
+                        channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
+                    }
                 } catch (IOException e) {
                     onFailure(e);
                 }
