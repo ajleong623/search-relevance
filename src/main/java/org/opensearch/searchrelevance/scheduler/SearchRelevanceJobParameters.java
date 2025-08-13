@@ -108,10 +108,19 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         out.writeInstant(lastUpdateTime);
         out.writeLong(lockDurationSeconds);
         out.writeOptionalDouble(jitter);
+        if (experimentType != null) {
+            out.writeString(experimentQuerySetId);
+        }
         out.writeEnum(experimentType);
-        out.writeString(experimentQuerySetId);
-        out.writeStringArray(experimentSearchConfigurationList.toArray(new String[0]));
-        out.writeStringArray(experimentJudgmentList.toArray(new String[0]));
+        if (experimentQuerySetId != null) {
+            out.writeString(experimentQuerySetId);
+        }
+        if (experimentSearchConfigurationList != null) {
+            out.writeStringArray(experimentSearchConfigurationList.toArray(new String[0]));
+        }
+        if (experimentJudgmentList != null) {
+            out.writeStringArray(experimentJudgmentList.toArray(new String[0]));
+        }
         out.writeInt(experimentSize);
     }
 

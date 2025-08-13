@@ -79,13 +79,20 @@ public class SearchRelevanceJobRunner implements ScheduledJobRunner {
 
         Runnable runnable = () -> {
             SearchRelevanceJobParameters parameter = (SearchRelevanceJobParameters) jobParameter;
+            log.info(parameter.getExperimentType());
+            log.info(parameter.getExperimentQuerySetId());
+            log.info(parameter.getExperimentSearchConfigurationList());
+            log.info(parameter.getExperimentJudgmentList());
+            log.info(parameter.getExperimentSize());
             client.execute(
                 PutExperimentAction.INSTANCE,
                 new PutExperimentRequest(
                     parameter.getExperimentType(),
                     parameter.getExperimentQuerySetId(),
                     parameter.getExperimentSearchConfigurationList(),
-                    parameter.getExperimentJudgmentList(),
+                    (parameter.getExperimentJudgmentList() == null || parameter.getExperimentJudgmentList().isEmpty())
+                        ? null
+                        : parameter.getExperimentJudgmentList(),
                     parameter.getExperimentSize()
                 ),
                 new ActionListener<IndexResponse>() {
