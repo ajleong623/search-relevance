@@ -9,7 +9,6 @@ package org.opensearch.searchrelevance.scheduler;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.List;
 
 import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.core.common.io.stream.StreamOutput;
@@ -17,7 +16,6 @@ import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.jobscheduler.spi.ScheduledJobParameter;
 import org.opensearch.jobscheduler.spi.schedule.IntervalSchedule;
 import org.opensearch.jobscheduler.spi.schedule.Schedule;
-import org.opensearch.searchrelevance.model.ExperimentType;
 
 public class SearchRelevanceJobParameters implements ScheduledJobParameter {
     public static final String NAME_FIELD = "name";
@@ -30,11 +28,7 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
     public static final String INDEX_NAME_FIELD = "index_name_to_watch";
     public static final String LOCK_DURATION_SECONDS = "lock_duration_seconds";
     public static final String JITTER = "jitter";
-    public static final String EXPERIMENT_TYPE = "experiment_type";
-    public static final String EXPERIMENT_QUERY_SET_ID = "experiment_query_set_id";
-    public static final String EXPERIMENT_SEARCH_CONFIGURATION_LIST = "experiment_search_configuration_list";
-    public static final String EXPERIMENT_JUDGMENT_LIST = "experiment_judgment_list";
-    public static final String EXPERIMENT_SIZE = "experiment_size";
+    public static final String EXPERIMENT_ID = "experiment_id";
 
     private String jobName;
     private Instant lastUpdateTime;
@@ -44,11 +38,7 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
     private String indexToWatch;
     private Long lockDurationSeconds;
     private Double jitter;
-    private ExperimentType experimentType;
-    private String experimentQuerySetId;
-    private List<String> experimentSearchConfigurationList;
-    private List<String> experimentJudgmentList;
-    private int experimentSize;
+    private String experimentId;
 
     public SearchRelevanceJobParameters() {}
 
@@ -59,11 +49,7 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         Schedule schedule,
         Long lockDurationSeconds,
         Double jitter,
-        ExperimentType experimentType,
-        String experimentQuerySetId,
-        List<String> experimentSearchConfigurationList,
-        List<String> experimentJudgmentList,
-        int experimentSize
+        String experimentId
     ) {
         this.jobName = name;
         this.indexToWatch = indexToWatch;
@@ -71,16 +57,11 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
 
         Instant now = Instant.now();
         this.isEnabled = true;
-        this.enabledTime = now;// .plus(schedule.getDelay(), ChronoUnit.SECONDS);
-        this.lastUpdateTime = now;// .plus(schedule.getDelay(), ChronoUnit.SECONDS);
+        this.enabledTime = now;
+        this.lastUpdateTime = now;
         this.lockDurationSeconds = lockDurationSeconds;
         this.jitter = jitter;
-        this.experimentType = experimentType;
-        this.experimentQuerySetId = experimentQuerySetId;
-        this.experimentSearchConfigurationList = experimentSearchConfigurationList;
-        this.experimentJudgmentList = experimentJudgmentList;
-        this.experimentSize = experimentSize;
-
+        this.experimentId = experimentId;
     }
 
     public SearchRelevanceJobParameters(StreamInput in) throws IOException {
@@ -92,11 +73,7 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         this.lastUpdateTime = in.readInstant();
         this.lockDurationSeconds = in.readLong();
         this.jitter = in.readOptionalDouble();
-        this.experimentType = in.readEnum(ExperimentType.class);
-        this.experimentQuerySetId = in.readOptionalString();
-        this.experimentSearchConfigurationList = in.readOptionalStringList();
-        this.experimentJudgmentList = in.readOptionalStringList();
-        this.experimentSize = in.readOptionalInt();
+        this.experimentId = in.readOptionalString();
     }
 
     public void writeTo(StreamOutput out) throws IOException {
@@ -108,20 +85,7 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         out.writeInstant(lastUpdateTime);
         out.writeLong(lockDurationSeconds);
         out.writeOptionalDouble(jitter);
-        if (experimentType != null) {
-            out.writeString(experimentQuerySetId);
-        }
-        out.writeEnum(experimentType);
-        if (experimentQuerySetId != null) {
-            out.writeString(experimentQuerySetId);
-        }
-        if (experimentSearchConfigurationList != null) {
-            out.writeStringArray(experimentSearchConfigurationList.toArray(new String[0]));
-        }
-        if (experimentJudgmentList != null) {
-            out.writeStringArray(experimentJudgmentList.toArray(new String[0]));
-        }
-        out.writeInt(experimentSize);
+        out.writeString(experimentId);
     }
 
     @Override
@@ -163,24 +127,8 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         return this.indexToWatch;
     }
 
-    public ExperimentType getExperimentType() {
-        return this.experimentType;
-    }
-
-    public String getExperimentQuerySetId() {
-        return this.experimentQuerySetId;
-    }
-
-    public List<String> getExperimentSearchConfigurationList() {
-        return this.experimentSearchConfigurationList;
-    }
-
-    public List<String> getExperimentJudgmentList() {
-        return this.experimentJudgmentList;
-    }
-
-    public int getExperimentSize() {
-        return this.experimentSize;
+    public String getExperimentId() {
+        return this.experimentId;
     }
 
     public void setJobName(String jobName) {
@@ -215,24 +163,8 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         this.jitter = jitter;
     }
 
-    public void setExperimentType(ExperimentType experimentType) {
-        this.experimentType = experimentType;
-    }
-
-    public void setExperimentQuerySetId(String experimentQuerySetId) {
-        this.experimentQuerySetId = experimentQuerySetId;
-    }
-
-    public void setExperimentSearchConfigurationList(List<String> experimentSearchConfigurationList) {
-        this.experimentSearchConfigurationList = experimentSearchConfigurationList;
-    }
-
-    public void setExperimentJudgmentList(List<String> experimentJudgmentList) {
-        this.experimentJudgmentList = experimentJudgmentList;
-    }
-
-    public void setExperimentSize(int experimentSize) {
-        this.experimentSize = experimentSize;
+    public void setExperimentId(String experimentId) {
+        this.experimentId = experimentId;
     }
 
     @Override
@@ -254,19 +186,9 @@ public class SearchRelevanceJobParameters implements ScheduledJobParameter {
         if (this.jitter != null) {
             builder.field(JITTER, this.jitter);
         }
-        if (this.experimentType != null) {
-            builder.field(EXPERIMENT_TYPE, this.experimentType.name());
+        if (this.experimentId != null) {
+            builder.field(EXPERIMENT_ID, this.experimentId);
         }
-        if (this.experimentQuerySetId != null) {
-            builder.field(EXPERIMENT_QUERY_SET_ID, this.experimentQuerySetId);
-        }
-        if (this.experimentSearchConfigurationList != null) {
-            builder.field(EXPERIMENT_SEARCH_CONFIGURATION_LIST, this.experimentSearchConfigurationList);
-        }
-        if (this.experimentJudgmentList != null) {
-            builder.field(EXPERIMENT_JUDGMENT_LIST, this.experimentJudgmentList);
-        }
-        builder.field(EXPERIMENT_SIZE, this.experimentSize);
         builder.endObject();
         return builder;
     }

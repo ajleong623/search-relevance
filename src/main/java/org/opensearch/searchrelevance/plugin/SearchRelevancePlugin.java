@@ -9,6 +9,7 @@ package org.opensearch.searchrelevance.plugin;
 
 import static org.opensearch.searchrelevance.common.PluginConstants.EXPERIMENT_INDEX;
 import static org.opensearch.searchrelevance.common.PluginConstants.JUDGMENT_CACHE_INDEX;
+import static org.opensearch.searchrelevance.common.PluginConstants.SCHEDULED_JOBS_INDEX;
 import static org.opensearch.searchrelevance.settings.SearchRelevanceSettings.SEARCH_RELEVANCE_QUERY_SET_MAX_LIMIT;
 import static org.opensearch.searchrelevance.settings.SearchRelevanceSettings.SEARCH_RELEVANCE_STATS_ENABLED;
 import static org.opensearch.searchrelevance.settings.SearchRelevanceSettings.SEARCH_RELEVANCE_WORKBENCH_ENABLED;
@@ -56,22 +57,27 @@ import org.opensearch.searchrelevance.dao.ExperimentVariantDao;
 import org.opensearch.searchrelevance.dao.JudgmentCacheDao;
 import org.opensearch.searchrelevance.dao.JudgmentDao;
 import org.opensearch.searchrelevance.dao.QuerySetDao;
+import org.opensearch.searchrelevance.dao.ScheduledJobsDao;
 import org.opensearch.searchrelevance.dao.SearchConfigurationDao;
 import org.opensearch.searchrelevance.executors.ExperimentTaskManager;
 import org.opensearch.searchrelevance.executors.SearchRelevanceExecutor;
+import org.opensearch.searchrelevance.experiment.HybridOptimizerExperimentProcessor;
+import org.opensearch.searchrelevance.experiment.PointwiseExperimentProcessor;
 import org.opensearch.searchrelevance.indices.SearchRelevanceIndicesManager;
 import org.opensearch.searchrelevance.metrics.MetricsHelper;
 import org.opensearch.searchrelevance.ml.MLAccessor;
-import org.opensearch.searchrelevance.model.ExperimentType;
+import org.opensearch.searchrelevance.model.ScheduledJob;
 import org.opensearch.searchrelevance.rest.RestCreateQuerySetAction;
 import org.opensearch.searchrelevance.rest.RestDeleteExperimentAction;
 import org.opensearch.searchrelevance.rest.RestDeleteJudgmentAction;
 import org.opensearch.searchrelevance.rest.RestDeleteQuerySetAction;
+import org.opensearch.searchrelevance.rest.RestDeleteScheduledExperimentAction;
 import org.opensearch.searchrelevance.rest.RestDeleteSearchConfigurationAction;
 import org.opensearch.searchrelevance.rest.RestGetExperimentAction;
 import org.opensearch.searchrelevance.rest.RestGetJudgmentAction;
 import org.opensearch.searchrelevance.rest.RestGetQuerySetAction;
 import org.opensearch.searchrelevance.rest.RestGetSearchConfigurationAction;
+import org.opensearch.searchrelevance.rest.RestPostScheduledExperimentAction;
 import org.opensearch.searchrelevance.rest.RestPutExperimentAction;
 import org.opensearch.searchrelevance.rest.RestPutJudgmentAction;
 import org.opensearch.searchrelevance.rest.RestPutQuerySetAction;
@@ -102,6 +108,10 @@ import org.opensearch.searchrelevance.transport.queryset.PostQuerySetAction;
 import org.opensearch.searchrelevance.transport.queryset.PostQuerySetTransportAction;
 import org.opensearch.searchrelevance.transport.queryset.PutQuerySetAction;
 import org.opensearch.searchrelevance.transport.queryset.PutQuerySetTransportAction;
+import org.opensearch.searchrelevance.transport.scheduledJob.DeleteScheduledExperimentAction;
+import org.opensearch.searchrelevance.transport.scheduledJob.DeleteScheduledExperimentTransportAction;
+import org.opensearch.searchrelevance.transport.scheduledJob.PostScheduledExperimentAction;
+import org.opensearch.searchrelevance.transport.scheduledJob.PostScheduledExperimentTransportAction;
 import org.opensearch.searchrelevance.transport.searchConfiguration.DeleteSearchConfigurationAction;
 import org.opensearch.searchrelevance.transport.searchConfiguration.DeleteSearchConfigurationTransportAction;
 import org.opensearch.searchrelevance.transport.searchConfiguration.GetSearchConfigurationAction;
@@ -126,9 +136,6 @@ public class SearchRelevancePlugin extends Plugin
         ClusterPlugin,
         ExtensiblePlugin,
         JobSchedulerExtension {
-
-    static final String JOB_INDEX_NAME = ".scheduler_sample_extension";
-
     private Client client;
     private ClusterService clusterService;
     private SearchRelevanceIndicesManager searchRelevanceIndicesManager;
@@ -139,6 +146,7 @@ public class SearchRelevancePlugin extends Plugin
     private JudgmentDao judgmentDao;
     private EvaluationResultDao evaluationResultDao;
     private JudgmentCacheDao judgmentCacheDao;
+    private ScheduledJobsDao scheduledJobsDao;
     private MLAccessor mlAccessor;
     private MetricsHelper metricsHelper;
     private SearchRelevanceSettingsAccessor settingsAccessor;
@@ -177,6 +185,7 @@ public class SearchRelevancePlugin extends Plugin
         this.judgmentDao = new JudgmentDao(searchRelevanceIndicesManager);
         this.evaluationResultDao = new EvaluationResultDao(searchRelevanceIndicesManager);
         this.judgmentCacheDao = new JudgmentCacheDao(searchRelevanceIndicesManager);
+        this.scheduledJobsDao = new ScheduledJobsDao(searchRelevanceIndicesManager);
         MachineLearningNodeClient mlClient = new MachineLearningNodeClient(client);
         this.mlAccessor = new MLAccessor(mlClient);
         SearchRelevanceExecutor.initialize(threadPool);
@@ -192,9 +201,14 @@ public class SearchRelevancePlugin extends Plugin
         this.infoStatsManager = new InfoStatsManager(settingsAccessor);
         EventStatsManager.instance().initialize(settingsAccessor);
         SearchRelevanceJobRunner jobRunner = SearchRelevanceJobRunner.getJobRunnerInstance();
-        jobRunner.setClusterService(clusterService);
         jobRunner.setThreadPool(threadPool);
         jobRunner.setClient(client);
+        jobRunner.setExperimentDao(experimentDao);
+        jobRunner.setQuerySetDao(querySetDao);
+        jobRunner.setSearchConfigurationDao(searchConfigurationDao);
+        jobRunner.setMetricsHelper(metricsHelper);
+        jobRunner.setHybridOptimizerExperimentProcessor(new HybridOptimizerExperimentProcessor(judgmentDao, experimentTaskManager));
+        jobRunner.setPointwiseExperimentProcessor(new PointwiseExperimentProcessor(judgmentDao, experimentTaskManager));
 
         return List.of(
             searchRelevanceIndicesManager,
@@ -205,10 +219,12 @@ public class SearchRelevancePlugin extends Plugin
             judgmentDao,
             evaluationResultDao,
             judgmentCacheDao,
+            scheduledJobsDao,
             mlAccessor,
             metricsHelper,
             infoStatsManager,
-            experimentTaskManager
+            experimentTaskManager,
+            jobRunner
         );
     }
 
@@ -236,7 +252,9 @@ public class SearchRelevancePlugin extends Plugin
             new RestPutExperimentAction(settingsAccessor),
             new RestGetExperimentAction(settingsAccessor),
             new RestDeleteExperimentAction(settingsAccessor),
-            new RestSearchRelevanceStatsAction(settingsAccessor, clusterUtil)
+            new RestSearchRelevanceStatsAction(settingsAccessor, clusterUtil),
+            new RestPostScheduledExperimentAction(settingsAccessor),
+            new RestDeleteScheduledExperimentAction(settingsAccessor)
         );
     }
 
@@ -256,7 +274,9 @@ public class SearchRelevancePlugin extends Plugin
             new ActionHandler<>(PutExperimentAction.INSTANCE, PutExperimentTransportAction.class),
             new ActionHandler<>(DeleteExperimentAction.INSTANCE, DeleteExperimentTransportAction.class),
             new ActionHandler<>(GetExperimentAction.INSTANCE, GetExperimentTransportAction.class),
-            new ActionHandler<>(SearchRelevanceStatsAction.INSTANCE, SearchRelevanceStatsTransportAction.class)
+            new ActionHandler<>(SearchRelevanceStatsAction.INSTANCE, SearchRelevanceStatsTransportAction.class),
+            new ActionHandler<>(PostScheduledExperimentAction.INSTANCE, PostScheduledExperimentTransportAction.class),
+            new ActionHandler<>(DeleteScheduledExperimentAction.INSTANCE, DeleteScheduledExperimentTransportAction.class)
         );
     }
 
@@ -267,7 +287,7 @@ public class SearchRelevancePlugin extends Plugin
 
     @Override
     public String getJobIndex() {
-        return JOB_INDEX_NAME;
+        return SCHEDULED_JOBS_INDEX;
     }
 
     @Override
@@ -285,6 +305,8 @@ public class SearchRelevancePlugin extends Plugin
                 String fieldName = parser.currentName();
                 parser.nextToken();
                 switch (fieldName) {
+                    case ScheduledJob.ID:
+                        break;
                     case SearchRelevanceJobParameters.NAME_FIELD:
                         jobParameter.setJobName(parser.text());
                         break;
@@ -309,20 +331,8 @@ public class SearchRelevancePlugin extends Plugin
                     case SearchRelevanceJobParameters.JITTER:
                         jobParameter.setJitter(parser.doubleValue());
                         break;
-                    case SearchRelevanceJobParameters.EXPERIMENT_TYPE:
-                        jobParameter.setExperimentType(ExperimentType.valueOf(parser.text()));
-                        break;
-                    case SearchRelevanceJobParameters.EXPERIMENT_QUERY_SET_ID:
-                        jobParameter.setExperimentQuerySetId(parser.text());
-                        break;
-                    case SearchRelevanceJobParameters.EXPERIMENT_SEARCH_CONFIGURATION_LIST:
-                        jobParameter.setExperimentSearchConfigurationList((List<String>) (Object) parser.list());
-                        break;
-                    case SearchRelevanceJobParameters.EXPERIMENT_JUDGMENT_LIST:
-                        jobParameter.setExperimentJudgmentList((List<String>) (Object) parser.list());
-                        break;
-                    case SearchRelevanceJobParameters.EXPERIMENT_SIZE:
-                        jobParameter.setExperimentSize(parser.intValue());
+                    case SearchRelevanceJobParameters.EXPERIMENT_ID:
+                        jobParameter.setExperimentId(parser.text());
                         break;
                     default:
                         XContentParserUtils.throwUnknownToken(parser.currentToken(), parser.getTokenLocation());

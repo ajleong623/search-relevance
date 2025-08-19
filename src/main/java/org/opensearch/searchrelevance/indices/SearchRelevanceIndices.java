@@ -19,6 +19,8 @@ import static org.opensearch.searchrelevance.common.PluginConstants.JUDGMENT_IND
 import static org.opensearch.searchrelevance.common.PluginConstants.JUDGMENT_INDEX_MAPPING;
 import static org.opensearch.searchrelevance.common.PluginConstants.QUERY_SET_INDEX;
 import static org.opensearch.searchrelevance.common.PluginConstants.QUERY_SET_INDEX_MAPPING;
+import static org.opensearch.searchrelevance.common.PluginConstants.SCHEDULED_JOBS_INDEX;
+import static org.opensearch.searchrelevance.common.PluginConstants.SCHEDULED_JOBS_INDEX_MAPPING;
 import static org.opensearch.searchrelevance.common.PluginConstants.SEARCH_CONFIGURATION_INDEX;
 import static org.opensearch.searchrelevance.common.PluginConstants.SEARCH_CONFIGURATION_INDEX_MAPPING;
 import static org.opensearch.searchrelevance.indices.SearchRelevanceIndicesManager.getIndexMappings;
@@ -66,7 +68,12 @@ public enum SearchRelevanceIndices {
     /**
      * Experiment Variant Index
      */
-    EXPERIMENT_VARIANT(EXPERIMENT_VARIANT_INDEX, EXPERIMENT_VARIANT_INDEX_MAPPING, false);
+    EXPERIMENT_VARIANT(EXPERIMENT_VARIANT_INDEX, EXPERIMENT_VARIANT_INDEX_MAPPING, false),
+
+    /**
+     * Scheduled Jobs Index
+     */
+    SCHEDULED_JOBS(SCHEDULED_JOBS_INDEX, SCHEDULED_JOBS_INDEX_MAPPING, false);
 
     private final String indexName;
     private final String mapping;

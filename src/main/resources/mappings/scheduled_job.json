@@ -1,0 +1,40 @@
+{
+  "properties": {
+    "id": { "type": "keyword" },
+    "enabled": {
+      "type": "boolean"
+    },
+    "enabled_time": {
+      "type": "long"
+    },
+    "experiment_id": {
+      "type": "keyword"
+    },
+    "index_name_to_watch": {
+      "type": "keyword"
+    },
+    "last_update_time": {
+      "type": "long"
+    },
+    "lock_duration_seconds": {
+      "type": "long"
+    },
+    "name": {
+      "type": "keyword"
+    },
+    "schedule": {
+      "properties": {
+        "cron": {
+          "properties": {
+            "expression": {
+              "type": "keyword"
+            },
+            "timezone": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    }
+  }
+}
