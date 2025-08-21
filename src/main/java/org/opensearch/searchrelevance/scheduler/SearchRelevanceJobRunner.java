@@ -111,7 +111,7 @@ public class SearchRelevanceJobRunner implements ScheduledJobRunner {
     public void runJob(ScheduledJobParameter jobParameter, JobExecutionContext context) {
         if (!(jobParameter instanceof SearchRelevanceJobParameters)) {
             throw new IllegalStateException(
-                "Job parameter is not instance of SampleJobParameter, type: " + jobParameter.getClass().getCanonicalName()
+                "Job parameter is not instance of SearchRelevanceJobParameters, type: " + jobParameter.getClass().getCanonicalName()
             );
         }
 
