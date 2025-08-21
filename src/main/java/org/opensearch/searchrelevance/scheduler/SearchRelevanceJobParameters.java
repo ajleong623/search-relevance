@@ -20,15 +20,15 @@ import org.opensearch.jobscheduler.spi.schedule.Schedule;
 public class SearchRelevanceJobParameters implements ScheduledJobParameter {
     public static final String NAME_FIELD = "name";
     public static final String ENABLED_FILED = "enabled";
-    public static final String LAST_UPDATE_TIME_FIELD = "last_update_time";
-    public static final String LAST_UPDATE_TIME_FIELD_READABLE = "last_update_time_field";
+    public static final String LAST_UPDATE_TIME_FIELD = "lastUpdateTime";
+    public static final String LAST_UPDATE_TIME_FIELD_READABLE = "lastUpdateTimeField";
     public static final String SCHEDULE_FIELD = "schedule";
-    public static final String ENABLED_TIME_FILED = "enabled_time";
-    public static final String ENABLED_TIME_FILED_READABLE = "enabled_time_field";
-    public static final String INDEX_NAME_FIELD = "index_name_to_watch";
-    public static final String LOCK_DURATION_SECONDS = "lock_duration_seconds";
+    public static final String ENABLED_TIME_FILED = "enabledTime";
+    public static final String ENABLED_TIME_FILED_READABLE = "enabledTimeField";
+    public static final String INDEX_NAME_FIELD = "indexNameToWatch";
+    public static final String LOCK_DURATION_SECONDS = "lockDurationSeconds";
     public static final String JITTER = "jitter";
-    public static final String EXPERIMENT_ID = "experiment_id";
+    public static final String EXPERIMENT_ID = "experimentId";
 
     private String jobName;
     private Instant lastUpdateTime;

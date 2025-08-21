@@ -4,19 +4,19 @@
     "enabled": {
       "type": "boolean"
     },
-    "enabled_time": {
+    "enabledTime": {
       "type": "long"
     },
-    "experiment_id": {
+    "experimentId": {
       "type": "keyword"
     },
-    "index_name_to_watch": {
+    "indexNameToWatch": {
       "type": "keyword"
     },
-    "last_update_time": {
+    "lastUpdateTime": {
       "type": "long"
     },
-    "lock_duration_seconds": {
+    "lockDurationSeconds": {
       "type": "long"
     },
     "name": {
