@@ -36,7 +36,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 /**
- * Rest Action to facilitate requests to schedule running an experiment.
+ * Rest Action to facilitate requests to create a scheduled experiment.
  */
 @AllArgsConstructor
 public class RestPostScheduledExperimentAction extends BaseRestHandler {

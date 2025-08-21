@@ -37,7 +37,7 @@ import lombok.extern.log4j.Log4j2;
 
 @Log4j2
 /**
- * Rest Action to facilitate requests to delete the scheduled running of an experiment```
+ * Rest Action to facilitate requests to delete a scheduled experiment.
  */
 @AllArgsConstructor
 public class RestDeleteScheduledExperimentAction extends BaseRestHandler {
