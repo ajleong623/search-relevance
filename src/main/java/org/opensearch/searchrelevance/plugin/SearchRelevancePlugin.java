@@ -282,7 +282,7 @@ public class SearchRelevancePlugin extends Plugin
 
     @Override
     public String getJobType() {
-        return "scheduler_sample_extension";
+        return "scheduled_experiment_job";
     }
 
     @Override

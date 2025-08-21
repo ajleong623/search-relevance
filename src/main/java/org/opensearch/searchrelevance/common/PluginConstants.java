@@ -26,7 +26,7 @@ public class PluginConstants {
     public static final String JUDGMENTS_URL = SEARCH_RELEVANCE_BASE_URI + "/judgments";
     /** The URI for this plugin's search configurations rest actions */
     public static final String SEARCH_CONFIGURATIONS_URL = SEARCH_RELEVANCE_BASE_URI + "/search_configurations";
-    /** The URI for this plugin's search configurations rest actions */
+    /** The URI for this plugin's scheduled experiments rest actions */
     public static final String SCHEDULED_EXPERIMENT_URL = SEARCH_RELEVANCE_BASE_URI + "/scheduled_experiment";
     /** The URI for initializing the UBI indices */
     public static final String INITIALIZE_URL = "/_plugins/ubi/initialize";
@@ -84,10 +84,10 @@ public class PluginConstants {
     public static final String SEARCH_PIPELINE = "searchPipeline";
     public static final String SIZE = "size";
     public static final String QUERYSET_ID = "querySetId";
-    public static final String EXPERIMENT_ID = "experiment_id";
+    public static final String EXPERIMENT_ID = "experimentId";
     public static final String SEARCH_CONFIGURATION_LIST = "searchConfigurationList";
     public static final String JUDGMENT_LIST = "judgmentList";
-    public static final String CRON_EXPRESSION = "cron_expression";
+    public static final String CRON_EXPRESSION = "cronExpression";
 
     public static final String JUDGMENT_RATINGS = "judgmentRatings";
     public static final String CONTEXT_FIELDS = "contextFields";

@@ -47,7 +47,6 @@ import lombok.extern.log4j.Log4j2;
 @AllArgsConstructor
 public class RestPutExperimentAction extends BaseRestHandler {
     private static final String PUT_EXPERIMENT_ACTION = "put_experiment_action";
-    static final String JOB_INDEX_NAME = ".scheduler_sample_extension";
     private SearchRelevanceSettingsAccessor settingsAccessor;
 
     @Override
